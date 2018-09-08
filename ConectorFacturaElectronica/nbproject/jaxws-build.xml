@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+        *** GENERATED FROM jax-ws.xml - DO NOT EDIT !                             ***
+        *** TO MODIFY wsimport options USE Web Service node -> Edit WS Attributes ***
+        *** TO CHANGE TARGETS GENERATED TO jaxws-build.xml COPY THOSE             ***
+        *** TARGETS TO ../build.xml AND MODIFY THAT FILE INSTEAD                  ***
+
+        --><project xmlns:xalan="http://xml.apache.org/xslt" xmlns:j2seproject3="http://www.netbeans.org/ns/j2se-project/3" xmlns:jaxws="http://www.netbeans.org/ns/jax-ws/1">
+    <!--
+                ===================
+                JAX-WS WSIMPORT SECTION
+                ===================
+            -->
+    <target name="wsimport-init" depends="init">
+        <mkdir dir="${build.generated.sources.dir}/jax-ws"/>
+        <taskdef name="wsimport" classname="com.sun.tools.ws.ant.WsImport">
+            <classpath path="${libs.jaxws21.classpath}"/>
+        </taskdef>
+    </target>
+    <target name="wsimport-client-WSEDOC_FACTURAS" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/WSEDOC_FACTURAS"/>
+        <property name="wsdl-WSEDOC_FACTURAS" location="xml-resources/web-service-references/WSEDOC_FACTURAS/wsdl/gurusoft-lab.com/eDocCR/WSEDOC/WSEDOC_FACTURAS.svc.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/WSEDOC_FACTURAS" destdir="${build.generated.dir}/jax-wsCache/WSEDOC_FACTURAS" wsdl="${wsdl-WSEDOC_FACTURAS}" catalog="catalog.xml" encoding="${source.encoding}" extension="true" verbose="true" fork="false" wsdlLocation="http://gurusoft-lab.com/eDocCR/WSEDOC/WSEDOC_FACTURAS.svc?wsdl" xnocompile="true" xendorsed="true" package="WSFacturaElectronica">
+            <binding dir="xml-resources/web-service-references/WSEDOC_FACTURAS/bindings" includes="WSEDOC_FACTURAS_handler.xml"/>
+            <depends file="${wsdl-WSEDOC_FACTURAS}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/WSEDOC_FACTURAS"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/WSEDOC_FACTURAS">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${build.generated.dir}/jax-wsCache/WSEDOC_FACTURAS">
+                <include name="**/*.xml"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-WSEDOC_FACTURAS" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/WSEDOC_FACTURAS"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/WSFacturaElectronica"/>
+    </target>
+    <target name="wsimport-client-WSEDOC_TIQUETE" depends="wsimport-init">
+        <mkdir dir="${build.generated.dir}/jax-wsCache/WSEDOC_TIQUETE"/>
+        <property name="wsdl-WSEDOC_TIQUETE" location="xml-resources/web-service-references/WSEDOC_TIQUETE/wsdl/gurusoft-lab.com/eDocCR/WSEDOC/WSEDOC_TIQUETE.svc.wsdl"/>
+        <wsimport sourcedestdir="${build.generated.dir}/jax-wsCache/WSEDOC_TIQUETE" destdir="${build.generated.dir}/jax-wsCache/WSEDOC_TIQUETE" wsdl="${wsdl-WSEDOC_TIQUETE}" catalog="catalog.xml" encoding="${source.encoding}" extension="true" verbose="true" fork="false" wsdlLocation="http://gurusoft-lab.com/eDocCR/WSEDOC/WSEDOC_TIQUETE.svc?wsdl" xnocompile="true" xendorsed="true" package="WSTiqueteElectronco">
+            <binding dir="xml-resources/web-service-references/WSEDOC_TIQUETE/bindings" includes="WSEDOC_TIQUETE_handler.xml"/>
+            <depends file="${wsdl-WSEDOC_TIQUETE}"/>
+            <produces dir="${build.generated.dir}/jax-wsCache/WSEDOC_TIQUETE"/>
+        </wsimport>
+        <copy todir="${build.generated.sources.dir}/jax-ws">
+            <fileset dir="${build.generated.dir}/jax-wsCache/WSEDOC_TIQUETE">
+                <include name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${build.generated.dir}/jax-wsCache/WSEDOC_TIQUETE">
+                <include name="**/*.xml"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="wsimport-client-clean-WSEDOC_TIQUETE" depends="-init-project">
+        <delete dir="${build.generated.dir}/jax-wsCache/WSEDOC_TIQUETE"/>
+        <delete dir="${build.generated.sources.dir}/jax-ws/WSTiqueteElectronco"/>
+    </target>
+    <target name="wsimport-client-generate" depends="wsimport-client-WSEDOC_FACTURAS, wsimport-client-WSEDOC_TIQUETE"/>
+</project>
