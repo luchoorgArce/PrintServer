@@ -65,6 +65,8 @@ public class ControladorFacturaElectronica implements Runnable {
    private void EnviarFacturas(){
        
        Estado estadoFactura;
+       int reintento = 0;
+       Estado estado = Estado.CREADA;
        String json = null;
        Gson gson = new Gson();
        ControladorDB cDB = new ControladorDB();
@@ -75,6 +77,7 @@ public class ControladorFacturaElectronica implements Runnable {
         mensaje.value = "1"; 
        
         for (Factura factura : listaFacturas) {
+            reintento = factura.getReintentos();
             json = gson.toJson(factura);
             System.out.println("Factura " + factura.getSecuencia() + ": " + json);
             
@@ -100,6 +103,14 @@ public class ControladorFacturaElectronica implements Runnable {
                         enviarFacturaResult.value.getNumeroConsecutivo(), 
                         enviarFacturaResult.value.getClaveComprobante()
                 );
+            }
+            else{
+                reintento++;                
+                if(reintento == datosEmpresa.getCantidadMaximaReintentos()){
+                    estado = Estado.NO_AUTORIZADA;
+                }
+                cDB.CambiarEstado(factura.getSecuencia(), estado, reintento);
+                cDB.GuardarBitacoraRechazos(factura.getSecuencia(), json, enviarFacturaResult.value.getMensajeRespuesta());
             }
         }
    }
@@ -271,12 +282,12 @@ public class ControladorFacturaElectronica implements Runnable {
             }
 
             clsTiquete.setTipoCambio(BigDecimal.ONE);
-            clsTiquete.setTotalServGravados(BigDecimal.ZERO);
-            clsTiquete.setTotalServExentos(BigDecimal.ZERO);
-            clsTiquete.setTotalMercanciasGravadas(BigDecimal.ZERO);
-            clsTiquete.setTotalMercanciasExentas(BigDecimal.ZERO);
-            clsTiquete.setTotalGravado(BigDecimal.TEN);
-            clsTiquete.setTotalExento(BigDecimal.ZERO);
+            //clsTiquete.setTotalServGravados(BigDecimal.ZERO);
+            //clsTiquete.setTotalServExentos(BigDecimal.ZERO);
+            //clsTiquete.setTotalMercanciasGravadas(BigDecimal.ZERO);
+            //clsTiquete.setTotalMercanciasExentas(BigDecimal.ZERO);
+            //clsTiquete.setTotalGravado(BigDecimal.ZERO);
+            //clsTiquete.setTotalExento(BigDecimal.ZERO);
             clsTiquete.setSinInternet(false);
             clsTiquete.setAdjunto(null);
 

@@ -19,21 +19,22 @@ public class Factura {
     private int secuencia;
     private String idOrden;
     private BigDecimal totalVenta;
-    private BigDecimal totalDescuentos; 
-    private BigDecimal totalVentaNeta; 
+    private BigDecimal totalDescuentos;
+    private BigDecimal totalVentaNeta;    
     private BigDecimal totalImpuesto;
-    private BigDecimal totalComprante; 
+    private BigDecimal totalComprante;
     private List<DetalleFactura> detalleFactura;
     private String condicionVenta;
-    private String codigMedioPago1 = "";
-    private String codigMedioPago2 = "";
-    private String codigMedioPago3 = "";
-    private String codigMedioPago4 = "";
-    private Date fechaAutorizacion; //TODO: Ask Hugo???
-    private String numeroConsecutivo; //TODO: Ask Hugo???
-    private String claveComprobante; //TODO: Ask Hugo???
-    private String nombreCliente; //TODO: Ask Hugo???
-    private String correoElectronicoCliente; //TODO: Ask Hugo???
+    private String codigMedioPago1;
+    private String codigMedioPago2;
+    private String codigMedioPago3;
+    private String codigMedioPago4;
+    private Date fechaAutorizacion;
+    private String numeroConsecutivo;
+    private String claveComprobante;
+    private String nombreCliente;
+    private String correoElectronicoCliente;
+    private int reintentos;
     
     public Factura(){
         this.detalleFactura = new ArrayList<DetalleFactura>();
@@ -121,22 +122,7 @@ public class Factura {
     public void setCondicionVenta(String condicionVenta) {
         this.condicionVenta = condicionVenta;
     }
-    
-    public void setPaymentMethod(String paymentMethod) {
-        if (codigMedioPago1.equals("")) {
-            setCodigMedioPago1(paymentMethod);
-        }
-        else if (codigMedioPago2.equals("")) {
-            setCodigMedioPago2(paymentMethod);
-        }
-        else if (codigMedioPago3.equals("")) {
-            setCodigMedioPago3(paymentMethod);
-        }
-        else {
-            setCodigMedioPago4(paymentMethod);
-        }
-    }
-    
+
     public String getCodigMedioPago1() {
         return codigMedioPago1;
     }
@@ -219,5 +205,19 @@ public class Factura {
      */
     public void setCorreoElectronicoCliente(String correoElectronicoCliente) {
         this.correoElectronicoCliente = correoElectronicoCliente;
+    }
+
+    /**
+     * @return the reintentos
+     */
+    public int getReintentos() {
+        return reintentos;
+    }
+
+    /**
+     * @param reintentos the reintentos to set
+     */
+    public void setReintentos(int reintentos) {
+        this.reintentos = reintentos;
     }
 }

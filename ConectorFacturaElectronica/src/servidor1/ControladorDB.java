@@ -8,8 +8,10 @@ package servidor1;
 import Entidades.DatosEmpresa;
 import Entidades.Factura;
 import Entidades.DetalleFactura;
+import Entidades.Estado;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -41,10 +43,10 @@ public class ControladorDB {
 
         return connect;
     }
-
+    
     public DatosEmpresa ObtenerDatosEmpresa() {
         DatosEmpresa datosEmpresa = new DatosEmpresa();
-        String sql = "Select Matriz, PuntoVenta, RazonSocial, TipoIdentificacion, NumIdentificacion, NombreComercial, Provincia, Canton, Distrito, Direccion, CorreoElectronico, Password From DatosEmpresa";
+        String sql = "Select Matriz, PuntoVenta, RazonSocial, TipoIdentificacion, NumIdentificacion, NombreComercial, Provincia, Canton, Distrito, Direccion, CorreoElectronico, Password, CantidadMaximaReintentos From DatosEmpresa";
         //String sql = "Select * From DatosEmpresa"; 
         Connection conn = null;
         try {
@@ -65,6 +67,7 @@ public class ControladorDB {
                 datosEmpresa.setDireccion(rs.getString("Direccion"));
                 datosEmpresa.setCorreoElectronico(rs.getString("CorreoElectronico"));
                 datosEmpresa.setPassword(rs.getString("Password"));
+                datosEmpresa.setCantidadMaximaReintentos(rs.getInt("CantidadMaximaReintentos"));
                 datosEmpresa.setMensajeError("NA");
             }
         } catch (SQLException ex) {
@@ -82,11 +85,12 @@ public class ControladorDB {
         return datosEmpresa;
     }
     
-    //0:Creada.
-    //1:Procesada.
-    //2:Se envío, sin respuesta.
+    //0:Creada, cuando se ingresa un nuevo registro desde el parser.
+    //1:Autorizada en Hacienda.
+    //2:No autorizada.
+    //3:En proceso, en estos casos se debe volver a preguntar por el estado.
     //4:Impresa.
-    public List<Factura> BuscarFacturas(int estado) {
+    public List<Factura> BuscarFacturas(Estado estado) {
 
         List<Factura> lista = new ArrayList<Factura>();
         boolean primerRegistro = true;
@@ -102,11 +106,11 @@ public class ControladorDB {
         sql = sql + "t1.CodCondicionVenta, t1.CodMedioPago1, t1.CodMedioPago2, t1.CodMedioPago3, t1.CodMedioPago4, ";
         sql = sql + "t2.Linea, t2.Descripcion, t2.Cantidad, t2.UnidadMedida, t2.PrecioUnitario, ";
         sql = sql + "t2.Monto, t2.MontoDescuento, t2.NaturalezaDescuento, t2.SubTotal, ";
-        sql = sql + "t2. TotalImpuesto, t2.MontoTotalLinea, ";
-        sql = sql + "t1.NombreCliente, t1.CorreoElectronicoCliente ";
+        sql = sql + "t2.MontoTotalLinea, ";
+        sql = sql + "t1.NombreCliente, t1.CorreoElectronicoCliente, t1.Reintentos ";
         sql = sql + "from Facturas t1 ";
         sql = sql + "inner join DetalleFactura t2 On t1.Secuencia = t2.Secuencia ";
-        sql = sql + "Where t1.Estado = " + estado + " ";
+        sql = sql + "Where t1.Estado = " + estado.toInt() + " ";
         sql = sql + "Order By t1.Secuencia, t2.Linea asc";
         Connection conn = null;
 
@@ -128,7 +132,7 @@ public class ControladorDB {
                 dFactura.setNaturalezaDescuento(rs.getString("NaturalezaDescuento"));
                 dFactura.setPrecioUnitario(rs.getBigDecimal("PrecioUnitario"));
                 dFactura.setSubTotal(rs.getBigDecimal("SubTotal"));
-                dFactura.setTotalImpuesto(rs.getBigDecimal("TotalImpuesto"));
+                //dFactura.setTotalImpuesto(rs.getBigDecimal("TotalImpuesto"));
                 dFactura.setUnidadMedida(rs.getString("UnidadMedida"));
 
                 if (consecutivo != rs.getInt("Secuencia")) {
@@ -155,12 +159,15 @@ public class ControladorDB {
                     factura.setTotalVenta(rs.getBigDecimal("TotalVenta"));
                     factura.setTotalDescuentos(rs.getBigDecimal("TotalDescuento"));
                     factura.setTotalVentaNeta(rs.getBigDecimal("TotalVentaNeta"));
+                    factura.setReintentos(rs.getInt("Reintentos"));
                     factura.setDetalleFactura(dFactura);
                 } else {
                     factura.setDetalleFactura(dFactura);
                 }
             }
-            lista.add(factura);
+            if(factura != null){
+                lista.add(factura);
+            }                        
         } catch (SQLException ex) {
             Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -174,5 +181,99 @@ public class ControladorDB {
         }
 
         return lista;
+    }
+    
+    public void AgregarResultado(
+            int Secuencia,
+            Estado estado, 
+            String fechaAutorizacion, 
+            String numeroConsecutivo, 
+            String claveComprobante
+    ) {
+        Connection conn = null;
+        String sql = "Update Facturas Set " 
+                + "Estado = ?, "
+                + "FechaAutorizacion = ?, "
+                + "NumeroConsecutivo = ?, "
+                + "ClaveComprobante = ? "
+                + "Where Secuencia = ?";
+
+        try {
+
+            conn = this.Connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, estado.toInt());
+            pstmt.setString(2, fechaAutorizacion);
+            pstmt.setString(3, numeroConsecutivo);
+            pstmt.setString(4, claveComprobante);
+            pstmt.setInt(5, Secuencia);
+            
+            pstmt.executeUpdate();
+
+        } catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (conn != null && !conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public void GuardarBitacoraRechazos(int secuencia, String trama, String mensajeRespuesta){
+        Connection conn = null;
+        String sql = "INSERT INTO BitacoraEnviosRechazados(Secuencia,Trama,Respuesta) VALUES(?,?,?)";
+        try{
+            conn = this.Connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, secuencia);
+            pstmt.setString(2, trama);
+            pstmt.setString(3, mensajeRespuesta);
+            pstmt.executeUpdate();
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (conn != null && !conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }    
+    }
+    
+    public void CambiarEstado(int secuencia, Estado estado, int reintentos){
+        Connection conn = null;
+        String sql = "Update Facturas Set " 
+                + "Estado = ?, "
+                + "Reintentos = ? "
+                + "Where Secuencia = ?";        
+        
+        try
+        {
+            conn = this.Connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, estado.toInt());
+            pstmt.setInt(2, reintentos);
+            pstmt.setInt(3, secuencia);
+            
+            pstmt.executeUpdate();            
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (conn != null && !conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }  
     }
 }
