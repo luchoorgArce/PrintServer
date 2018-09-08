@@ -24,6 +24,7 @@ public class DatosEmpresa {
     private String correoElectronico;
     private String password;
     private String mensajeError;
+    private int cantidadMaximaReintentos;
 
     public DatosEmpresa() {}   
     
@@ -154,4 +155,18 @@ public class DatosEmpresa {
     public void setPassword(String password) {
         this.password = password;
     }        
+
+    /**
+     * @return the cantidadMaximaReintentos
+     */
+    public int getCantidadMaximaReintentos() {
+        return cantidadMaximaReintentos;
+    }
+
+    /**
+     * @param cantidadMaximaReintentos the cantidadMaximaReintentos to set
+     */
+    public void setCantidadMaximaReintentos(int cantidadMaximaReintentos) {
+        this.cantidadMaximaReintentos = cantidadMaximaReintentos;
+    }
 }
