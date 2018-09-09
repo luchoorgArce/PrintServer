@@ -5,40 +5,31 @@
  */
 package Impresoras.Epson;
 
-import FacturaElectronica.GuruSoft.ControladorFacturaElectronica;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import Entidades.Factura;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 /**
  *
  * @author vmora
  */
-public class ControladorImpresion implements Runnable {
-    
-    private Thread t;
-    
-    ControladorImpresion(){
-        System.out.println("Creating ControladorImpresion");
-    }
-    
-    public void run() { 
-        while(true)
-        {
-            try {
-                Thread.sleep(4000);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(ControladorFacturaElectronica.class.getName()).log(Level.SEVERE, null, ex);
+public class ControladorImpresion { //TODO: Use interfaces
+       
+    public void printInvoice(Factura invoice) {
+        try { 
+            Socket sock = new Socket("192.168.1.200", 9100); 
+            PrintWriter oStream = new PrintWriter(sock.getOutputStream()); 
+            
+            for(String line: invoice.getInvoiceLinesToPrint()) {
+                oStream.println(line);
             }
-            System.out.println("Hello from a thread ControladorImpresion!"); 
+      
+            oStream.close(); 
+            sock.close(); 
+        } catch (UnknownHostException e) { 
+            e.printStackTrace(); 
+        } catch (IOException e) { 
+            e.printStackTrace(); 
         }
-    }
-    
-    public void start (){
-        System.out.println("Starting ControladorFacturaElectronica");
-        if (t == null)
-        {
-            t = new Thread (this);
-            t.start ();
-        }
-    }
+    }    
 }
