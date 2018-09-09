@@ -5,10 +5,13 @@
  */
 package interfaces;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author luis.arce
  */
 public interface IParser {
-    void procesarFactura(String rawFactura, String[] lineasFactura);
+    void procesarFactura(String rawFactura, List<String> lineasFactura);
 }
