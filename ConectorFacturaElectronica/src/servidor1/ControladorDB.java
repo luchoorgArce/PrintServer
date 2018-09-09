@@ -8,6 +8,7 @@ package servidor1;
 import Entidades.DatosEmpresa;
 import Entidades.Factura;
 import Entidades.DetalleFactura;
+import Entidades.DetalleImpuesto;
 import Entidades.Estado;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -99,6 +100,7 @@ public class ControladorDB {
         int consecutivo = 0;
         Factura factura = null;
         DetalleFactura dFactura = null;
+        List<DetalleImpuesto> dImpuestos = null;
 
         //Factura factura = new Factura();
         //String sql = "Select * From Facturas Where Estado = " + estado; 
@@ -169,6 +171,9 @@ public class ControladorDB {
                 } else {
                     factura.setDetalleFactura(dFactura);
                 }
+                
+                dImpuestos = SearchTaxDetails(consecutivo, dFactura.getLinea(), conn);
+                dFactura.setdImpuesto(dImpuestos);
             }
             if(factura != null){
                 lineas = SearchLinesToPrint(factura.getSecuencia(), conn);
@@ -189,6 +194,30 @@ public class ControladorDB {
 
         return lista;
     }
+    
+    public List<DetalleImpuesto> SearchTaxDetails(int secuencia, int line, Connection conn){
+        List<DetalleImpuesto> result = new ArrayList<DetalleImpuesto>();
+        try
+        {
+            String sql = "select Codigo, Tarifa, Monto From DetalleImpuesto Where SecuenciaFactura = " + secuencia + " and LineaDetalle = " + line;
+            
+            Statement stmt = conn.createStatement();            
+            ResultSet rs = stmt.executeQuery(sql);                        
+
+            while (rs.next()) {
+                DetalleImpuesto dImpuesto = new DetalleImpuesto();
+                dImpuesto.setCodigo(rs.getString("Codigo"));
+                dImpuesto.setTarifa(rs.getBigDecimal("Tarifa"));
+                dImpuesto.setMonto(rs.getBigDecimal("Monto"));
+                result.add(dImpuesto);
+            }
+        }
+        catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        }   
+        
+        return result;
+    }    
     
     public List<String> SearchLinesToPrint(int secuencia, Connection conn){
         List<String> lineas = new ArrayList<String>();
@@ -402,9 +431,22 @@ public class ControladorDB {
                 pstmt.setBigDecimal(6, factura.getDetalleFactura().get(i).getPrecioUnitario());
                 pstmt.setBigDecimal(7, factura.getDetalleFactura().get(i).getMonto());
                 pstmt.setBigDecimal(8, factura.getDetalleFactura().get(i).getSubTotal());
-                pstmt.setBigDecimal(9, factura.getDetalleFactura().get(i).getMontoTotalLinea());     
+                pstmt.setBigDecimal(9, factura.getDetalleFactura().get(i).getMontoTotalLinea());                                              
                 pstmt.executeUpdate(); 
-            }                             
+                
+                for (DetalleImpuesto dImpuesto : factura.getDetalleFactura().get(i).getdImpuesto()) {
+                    sql1 = "Insert Into DetalleImpuesto (SecuenciaFactura, LineaDetalle, Codigo, Tarifa, Monto) Values (?, ?, ?, ?, ?);";
+
+                    pstmt = conn.prepareStatement(sql1);
+                    pstmt.setInt(1, consecutivo);
+                    pstmt.setInt(2, factura.getDetalleFactura().get(i).getLinea());
+                    pstmt.setString(3, dImpuesto.getCodigo());
+                    pstmt.setBigDecimal(4, dImpuesto.getTarifa());
+                    pstmt.setBigDecimal(5, dImpuesto.getMonto());
+                    pstmt.executeUpdate();
+                }                
+                
+            }                                
             
             //Se inserta la línea por imprimir.
             int count = 1;
