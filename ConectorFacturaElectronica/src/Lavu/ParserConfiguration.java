@@ -5,12 +5,14 @@
  */
 package Lavu;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ParserConfiguration {
     private Map<String, String> paymentMethods = new HashMap<String, String>();
     private Map<String, String> parserKeyWords = new HashMap<String, String>(); //TODO: Implemente the part with all the others strings
+    private BigDecimal taxPercentage = new BigDecimal("0.13");
     
     private String laguague = "English"; // Spanish is second option - get it from config file
     
@@ -45,6 +47,14 @@ public class ParserConfiguration {
             paymentMethods.put("efectivo", "01");
             paymentMethods.put("tarjeta", "02");
         }    
+    }
+    
+    public BigDecimal getTaxPercentage() {
+        return taxPercentage;
+    }
+    
+    public void setTaxPercentage(BigDecimal taxPercentage) {
+        this.taxPercentage = taxPercentage;
     }
     
     public Map<String, String> getPaymentMethods() {
