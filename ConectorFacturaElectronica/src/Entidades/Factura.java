@@ -14,7 +14,7 @@ import java.util.List;
  *
  * @author Usuario
  */
-public class Factura {
+public class Factura implements IInvoice {
 
     private int secuencia;
     private String idOrden;
@@ -35,9 +35,11 @@ public class Factura {
     private String nombreCliente = "";
     private String correoElectronicoCliente = "";
     private int reintentos;
+    private List<String> invoiceLinesToPrint;
     
     public Factura(){
         this.detalleFactura = new ArrayList<DetalleFactura>();
+        this.invoiceLinesToPrint = new List<String>;
     }
     
     public Factura(int secuencia, String idOrden, BigDecimal totalVenta, BigDecimal totalImpuesto, BigDecimal totalComprante, List<DetalleFactura> detalleFactura, String condicionVenta, String codigMedioPago1) {
@@ -49,6 +51,14 @@ public class Factura {
         this.detalleFactura = detalleFactura;
         this.condicionVenta = condicionVenta;
         this.codigMedioPago1 = codigMedioPago1;
+    }
+    
+    public List<String> getInvoiceLinesToPrint() {
+        return this.invoiceLinesToPrint;
+    }
+    
+    public void setInvoiceLinesToPrint(List<String> invoiceLinesToPrint) {
+        this.invoiceLinesToPrint = invoiceLinesToPrint;
     }
     
     public int getSecuencia() {
