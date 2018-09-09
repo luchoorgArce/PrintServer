@@ -9,12 +9,14 @@ import Entidades.DatosEmpresa;
 import Entidades.DetalleFactura;
 import Entidades.Estado;
 import Entidades.Factura;
+import Impresoras.Epson.ControladorImpresion;
 import WSFacturaElectronica.ArrayOfClsDetalleServicio;
 import WSFacturaElectronica.ArrayOfOtros;
 import WSFacturaElectronica.ClsDetalleServicio;
 import WSFacturaElectronica.ClsEmisor;
 import WSFacturaElectronica.ClsOtros;
 import WSFacturaElectronica.ClsReceptor;
+import WSTiqueteElectronco.ClsDetalleImpuesto;
 import com.google.gson.Gson;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -70,6 +72,7 @@ public class ControladorFacturaElectronica implements Runnable {
        String json = null;
        Gson gson = new Gson();
        ControladorDB cDB = new ControladorDB();
+       ControladorImpresion cImpresion = new ControladorImpresion();
        List<Factura> listaFacturas = cDB.BuscarFacturas(Estado.CREADA);
        
         Holder<String> mensaje = new Holder<String>(); 
@@ -103,6 +106,12 @@ public class ControladorFacturaElectronica implements Runnable {
                         enviarFacturaResult.value.getNumeroConsecutivo(), 
                         enviarFacturaResult.value.getClaveComprobante()
                 );
+                
+                factura.addHaciendaInfo(enviarFacturaResult.value.getClaveComprobante(), enviarFacturaResult.value.getNumeroConsecutivo());
+                
+                //Enviar a imprimir la factura:
+                cImpresion.printInvoice(factura);
+                
             }
             else{
                 reintento++;                
@@ -236,19 +245,25 @@ public class ControladorFacturaElectronica implements Runnable {
     }
 
     private static void enviarTiquete(java.lang.String clave, java.lang.String entorno, WSTiqueteElectronco.ClsTiquete tiquete, javax.xml.ws.Holder<java.lang.String> mensaje, javax.xml.ws.Holder<WSTiqueteElectronco.RespuestaEDOC> enviarTiqueteResult) {
-        WSTiqueteElectronco.WSEDOCTIQUETE service = new WSTiqueteElectronco.WSEDOCTIQUETE();
-        WSTiqueteElectronco.IWSEDOCTIQUETE port = service.getBasicHttpBindingIWSEDOCTIQUETE();
         
-        BindingProvider bindingProvider = (BindingProvider) port;
-        Binding binding = bindingProvider.getBinding();
-        List<Handler> handlerChain = binding.getHandlerChain();
-        handlerChain.add(new LogMessageHandler());
-        binding.setHandlerChain(handlerChain);        
-        
-        port.enviarTiquete(clave, entorno, tiquete, mensaje, enviarTiqueteResult);
+        try
+        {
+            WSTiqueteElectronco.WSEDOCTIQUETE service = new WSTiqueteElectronco.WSEDOCTIQUETE();
+            WSTiqueteElectronco.IWSEDOCTIQUETE port = service.getBasicHttpBindingIWSEDOCTIQUETE();
+
+            BindingProvider bindingProvider = (BindingProvider) port;
+            Binding binding = bindingProvider.getBinding();
+            List<Handler> handlerChain = binding.getHandlerChain();
+            handlerChain.add(new LogMessageHandler());
+            binding.setHandlerChain(handlerChain);        
+
+            port.enviarTiquete(clave, entorno, tiquete, mensaje, enviarTiqueteResult);
+        }catch(Exception ex){
+            System.out.println(ex.getMessage());
+        }  
     }
     
-    private WSTiqueteElectronco.ClsTiquete ConvertirATiqueteGuru(Factura factura){
+        private WSTiqueteElectronco.ClsTiquete ConvertirATiqueteGuru(Factura factura){
         WSTiqueteElectronco.ClsTiquete clsTiquete = new WSTiqueteElectronco.ClsTiquete();
         try
         {
@@ -303,9 +318,21 @@ public class ControladorFacturaElectronica implements Runnable {
                 detalleServicio.setSubTotal(detalleFactura.getSubTotal());
                 detalleServicio.setMontoTotalLinea(detalleFactura.getMontoTotalLinea());  
                 detalleServicio.setMontoDescuento(detalleFactura.getMontoDescuento());
+                detalleServicio.setNaturalezaDescuento(detalleFactura.getNaturalezaDescuento());
+                
+                ClsDetalleImpuesto cDetalleImpuesto;
+                WSTiqueteElectronco.ArrayOfClsDetalleImpuesto
+                for(int i = 0; i < detalleFactura.getdImpuesto().size(); i++){
+                    cDetalleImpuesto = new ClsDetalleImpuesto();
+                    cDetalleImpuesto.setCodigo(detalleFactura.getdImpuesto().get(i).getCodigo());
+                    cDetalleImpuesto.setTarifa(detalleFactura.getdImpuesto().get(i).getTarifa());
+                    cDetalleImpuesto.setMonto(detalleFactura.getdImpuesto().get(i).getMonto());
+                     
+                    detalleServicio.setImpuestos(null);
+                }
                 detalleServicioArray.getClsDetalleServicio().add(detalleServicio);
-            }          
-            clsTiquete.setDetalleServicio(detalleServicioArray);
+            }         
+            clsTiquete.setDetalleServicio(detalleServicioArray);           
 
             clsTiquete.setInformacionReferencia(null);
             WSTiqueteElectronco.ClsOtros otros = new WSTiqueteElectronco.ClsOtros();
@@ -318,6 +345,7 @@ public class ControladorFacturaElectronica implements Runnable {
             clsTiquete.setCodMedioPago2(factura.getCodigMedioPago2());
             clsTiquete.setCodMedioPago3(factura.getCodigMedioPago3());
             clsTiquete.setCodMedioPago4(factura.getCodigMedioPago4());
+            clsTiquete.setTotalGravado(factura.getTotalVenta()); //En Lavu no hay produtos que no esten exentos.
             clsTiquete.setTotalVenta(factura.getTotalVenta());
             clsTiquete.setTotalDescuentos(factura.getTotalDescuentos());    //-
             clsTiquete.setTotalVentaNeta(factura.getTotalVentaNeta());      //=   

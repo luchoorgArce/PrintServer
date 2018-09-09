@@ -109,9 +109,9 @@ public class ControladorDB {
         sql = sql + "t2.Linea, t2.Descripcion, t2.Cantidad, t2.UnidadMedida, t2.PrecioUnitario, ";
         sql = sql + "t2.Monto, t2.MontoDescuento, t2.NaturalezaDescuento, t2.SubTotal, ";
         sql = sql + "t2.MontoTotalLinea, ";
-        sql = sql + "t1.NombreCliente, t1.CorreoElectronicoCliente, t1.Reintentos ";
+        sql = sql + "t1.NombreCliente, t1.CorreoElectronicoCliente, t1.Reintentos, t1.IndexHaciedaInformation ";
         sql = sql + "from Facturas t1 ";
-        sql = sql + "inner join DetalleFactura t2 On t1.Secuencia = t2.Secuencia ";
+        sql = sql + "inner join DetalleFactura t2 On t1.Secuencia = t2.SecuenciaFactura ";
         sql = sql + "Where t1.Estado = " + estado.toInt() + " ";
         sql = sql + "Order By t1.Secuencia, t2.Linea asc";
         Connection conn = null;
@@ -164,6 +164,7 @@ public class ControladorDB {
                     factura.setTotalDescuentos(rs.getBigDecimal("TotalDescuento"));
                     factura.setTotalVentaNeta(rs.getBigDecimal("TotalVentaNeta"));
                     factura.setReintentos(rs.getInt("Reintentos"));
+                    factura.setIndexHaciendaInformation(rs.getInt("IndexHaciedaInformation"));
                     factura.setDetalleFactura(dFactura);
                 } else {
                     factura.setDetalleFactura(dFactura);
@@ -193,7 +194,7 @@ public class ControladorDB {
         List<String> lineas = new ArrayList<String>();
         try
         {
-            String sql = "select TextoLinea LineasPorImprimir Where SecuenciaFactura = " + secuencia + " Order By NumeroLinea asc";
+            String sql = "select TextoLinea From LineasPorImprimir Where SecuenciaFactura = " + secuencia + " Order By NumeroLinea asc";
             
             Statement stmt = conn.createStatement();            
             ResultSet rs = stmt.executeQuery(sql);                        
@@ -359,6 +360,9 @@ public class ControladorDB {
                 sql2 += "'" + factura.getCodigMedioPago4() + "',";      
             }
             
+            sql1 += "IndexHaciedaInformation,";
+            sql2 += factura.getIndexHaciendaInformation() + ",";
+            
             sql1 += "Reintentos)";
             sql2 += "0)";
             
@@ -394,7 +398,7 @@ public class ControladorDB {
                 pstmt.setInt(2, factura.getDetalleFactura().get(i).getLinea());
                 pstmt.setString(3, factura.getDetalleFactura().get(i).getDescripcion());
                 pstmt.setInt(4, factura.getDetalleFactura().get(i).getCantidad());
-                pstmt.setString(5, factura.getDetalleFactura().get(i).getDescripcion());
+                pstmt.setString(5, factura.getDetalleFactura().get(i).getUnidadMedida());
                 pstmt.setBigDecimal(6, factura.getDetalleFactura().get(i).getPrecioUnitario());
                 pstmt.setBigDecimal(7, factura.getDetalleFactura().get(i).getMonto());
                 pstmt.setBigDecimal(8, factura.getDetalleFactura().get(i).getSubTotal());

@@ -6,26 +6,33 @@
 package Entidades;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
  * @author Usuario
  */
 public class DetalleFactura {
-    
-    private int linea;
-    private String descripcion;
-    private int cantidad;
-    private String unidadMedida; //TODO: Ask Hugo???
-    private BigDecimal precioUnitario;
-    private BigDecimal monto;
-    private BigDecimal montoDescuento;
-    private String naturalezaDescuento;
-    private BigDecimal subTotal;
-    private BigDecimal totalImpuesto; //TODO: Ask Hugo???
-    private BigDecimal montoTotalLinea; ///
-    
-    public DetalleFactura(){};
+
+    private int linea = 1;
+    private String descripcion = "";
+    private int cantidad = 0;
+    private String unidadMedida = "Unid"; //TODO: Ask Hugo???
+    private BigDecimal precioUnitario = new BigDecimal("0.0");
+    private BigDecimal monto = new BigDecimal("0.0");
+    private BigDecimal montoDescuento = new BigDecimal("0.0");
+    private String naturalezaDescuento = "";
+    private BigDecimal subTotal = new BigDecimal("0.0");
+    //private BigDecimal totalImpuesto = new BigDecimal("0.0"); //TODO: Ask Hugo???
+    private BigDecimal montoTotalLinea = new BigDecimal("0.0"); ///
+
+    private List<DetalleImpuesto> dImpuesto = new ArrayList<DetalleImpuesto>();
+
+    public DetalleFactura() {
+    }
+
+    ;
     
     public DetalleFactura(int linea, String descripcion, int cantidad, String unidadMedida, BigDecimal precioUnitario, BigDecimal monto, BigDecimal montoDescuento, String naturalezaDescuento, BigDecimal subTotal, BigDecimal totalImpuesto, BigDecimal montoTotalLinea) {
         this.linea = linea;
@@ -37,9 +44,8 @@ public class DetalleFactura {
         this.montoDescuento = montoDescuento;
         this.naturalezaDescuento = naturalezaDescuento;
         this.subTotal = subTotal;
-        this.totalImpuesto = totalImpuesto;
         this.montoTotalLinea = montoTotalLinea;
-    }     
+    }
 
     public int getLinea() {
         return linea;
@@ -113,14 +119,6 @@ public class DetalleFactura {
         this.subTotal = subTotal;
     }
 
-    public BigDecimal getTotalImpuesto() {
-        return totalImpuesto;
-    }
-
-    public void setTotalImpuesto(BigDecimal totalImpuesto) {
-        this.totalImpuesto = totalImpuesto;
-    }
-
     public BigDecimal getMontoTotalLinea() {
         return montoTotalLinea;
     }
@@ -128,8 +126,19 @@ public class DetalleFactura {
     public void setMontoTotalLinea(BigDecimal montoTotalLinea) {
         this.montoTotalLinea = montoTotalLinea;
     }
-    
-    
-    
-    
+
+    /**
+     * @return the dImpuesto
+     */
+    public List<DetalleImpuesto> getdImpuesto() {
+        return dImpuesto;
+    }
+
+    /**
+     * @param dImpuesto the dImpuesto to set
+     */
+    public void setdImpuesto(List<DetalleImpuesto> dImpuesto) {
+        this.dImpuesto = dImpuesto;
+    }
+
 }
