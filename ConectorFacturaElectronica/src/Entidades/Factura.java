@@ -71,7 +71,9 @@ public class Factura implements IInvoice {
     }
     
     public void setIndexHaciendaInformation(int index) {
-        this.indexHaciendaInformation = index;
+        if(this.indexHaciendaInformation == 0) {
+            this.indexHaciendaInformation = index;
+        }    
     }
     
     public List<String> getInvoiceLinesToPrint() {

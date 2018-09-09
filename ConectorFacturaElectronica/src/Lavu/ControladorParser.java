@@ -43,7 +43,7 @@ public class ControladorParser implements IParser {
         // Get information from the invoice
         Factura newInvoice = getFacturaInformation(lineasFactura, orderId);
         
-        cDB.InsertInvoice(newInvoice);
+        //cDB.InsertInvoice(newInvoice);
         
         System.out.println(orderId + "|");
         System.out.println("Factura Procesada correctamente");
@@ -120,19 +120,22 @@ public class ControladorParser implements IParser {
             BigDecimal subTotal = new BigDecimal(getNumberBackward(line));
             invoice.setTotalVenta(subTotal); 
         }
-        else if (line.contains(pKeyWords.get("TOTALLINE")) && 
+        //TODO: CHECK IF 10% IS REQUIRE
+        /*else if (line.contains(pKeyWords.get("TOTALLINE")) && 
                 !line.contains(pKeyWords.get("SUBTOTALLINE"))) {
             BigDecimal total = new BigDecimal(getNumberBackward(line));
-            invoice.setTotalComprante(total);
-        }
+            invoice.setTotalComprante(total); //TODO: CHECK IF 10% IS REQUIRE
+        }*/
         else if(line.contains(pKeyWords.get("DISCOUNTLINE"))) {
             BigDecimal discountTotal = new BigDecimal(getNumberBackward(line));
             invoice.setTotalDescuentos(discountTotal);
             invoice.setTotalVentaNeta(invoice.getTotalVenta().subtract(invoice.getTotalDescuentos()));
         }
         else if(line.contains(pKeyWords.get("TAXESLINE"))) {
-             BigDecimal taxes = new BigDecimal(getNumberBackward(line));
-             invoice.setTotalImpuesto(taxes);
+            BigDecimal taxes = new BigDecimal(getNumberBackward(line));
+            invoice.setTotalImpuesto(taxes);
+            BigDecimal total = invoice.getTotalVentaNeta().add(taxes); //TODO: CHECK IF 10% IS REQUIRE
+            invoice.setTotalComprante(total); //TODO: CHECK IF 10% IS REQUIRE
         }
         else if(!(paymentMethod = getPaymentMethod(line)).equals("")){
             invoice.setPaymentMethod(paymentMethod);
