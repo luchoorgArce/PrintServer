@@ -320,16 +320,19 @@ public class ControladorFacturaElectronica implements Runnable {
                 detalleServicio.setMontoDescuento(detalleFactura.getMontoDescuento());
                 detalleServicio.setNaturalezaDescuento(detalleFactura.getNaturalezaDescuento());
                 
-                ClsDetalleImpuesto cDetalleImpuesto;
-                WSTiqueteElectronco.ArrayOfClsDetalleImpuesto
+                
+                WSTiqueteElectronco.ArrayOfClsDetalleImpuesto detalleImpuestoList = new WSTiqueteElectronco.ArrayOfClsDetalleImpuesto();
                 for(int i = 0; i < detalleFactura.getdImpuesto().size(); i++){
-                    cDetalleImpuesto = new ClsDetalleImpuesto();
+                    ClsDetalleImpuesto cDetalleImpuesto = new ClsDetalleImpuesto();
+                    
                     cDetalleImpuesto.setCodigo(detalleFactura.getdImpuesto().get(i).getCodigo());
                     cDetalleImpuesto.setTarifa(detalleFactura.getdImpuesto().get(i).getTarifa());
                     cDetalleImpuesto.setMonto(detalleFactura.getdImpuesto().get(i).getMonto());
-                     
-                    detalleServicio.setImpuestos(null);
+                    
+                    detalleImpuestoList.getClsDetalleImpuesto().add(cDetalleImpuesto);
                 }
+                detalleServicio.setImpuestos(detalleImpuestoList);
+                
                 detalleServicioArray.getClsDetalleServicio().add(detalleServicio);
             }         
             clsTiquete.setDetalleServicio(detalleServicioArray);           

@@ -9,6 +9,7 @@ import interfaces.IParser;
 import java.util.HashSet;
 import java.util.Set;
 import Entidades.DetalleFactura;
+import Entidades.DetalleImpuesto;
 import Entidades.Factura;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -43,7 +44,7 @@ public class ControladorParser implements IParser {
         // Get information from the invoice
         Factura newInvoice = getFacturaInformation(lineasFactura, orderId);
         
-        //cDB.InsertInvoice(newInvoice);
+        cDB.InsertInvoice(newInvoice);
         
         System.out.println(orderId + "|");
         System.out.println("Factura Procesada correctamente");
@@ -84,10 +85,11 @@ public class ControladorParser implements IParser {
     
     private void processInvoiceDetailSection(Factura invoice, String line) {
         int lineCount = invoice.getDetalleFactura().size();
+        
         String discountLine = pConfiguration.getParserKeyWords().get("DISCOUNTLINE");
             String coupon = pConfiguration.getParserKeyWords().get("COUPON");
         
-        if (isFirstCharNumber(line) && (!line.contains(discountLine))) {
+        if (isFirstCharNumber(line) && (!line.contains(discountLine))) { // This indicate the init of a new invoice detail
             lineCount += 1;
             DetalleFactura dFactura = construirDetalleFactura(line, lineCount);                       
             dFactura.setLinea(lineCount);
@@ -102,12 +104,17 @@ public class ControladorParser implements IParser {
                 dFActura.setNaturalezaDescuento(getLineaContenido(line, 3));
                 dFActura.setSubTotal(dFActura.getMonto().subtract(additionalAmount));
                 dFActura.setMontoTotalLinea(dFActura.getSubTotal());
+                DetalleImpuesto dImpuesto = dFActura.getdImpuesto().get(0); // TODO: Only 1 tax for the lines
+                dImpuesto.setMonto(dFActura.getSubTotal().multiply(dImpuesto.getTarifa()));
             }
             else {
                 dFActura.setMonto(dFActura.getMonto().add(additionalAmount));
                 dFActura.setSubTotal(dFActura.getMonto());
                 dFActura.setMontoTotalLinea(dFActura.getSubTotal());
                 dFActura.setPrecioUnitario(dFActura.getMonto().divide(BigDecimal.valueOf(dFActura.getCantidad())));
+                DetalleImpuesto dImpuesto = dFActura.getdImpuesto().get(0); // TODO: Only 1 tax for the lines
+                dImpuesto.setMonto(dFActura.getSubTotal().multiply(dImpuesto.getTarifa()));
+                
             }                       
         }
     }
@@ -221,6 +228,7 @@ public class ControladorParser implements IParser {
         int lineQuantity = -1;
         BigDecimal lineAmount = new BigDecimal("-1.0");
         String lineDescription = "";
+        List<DetalleImpuesto> dImpuesto = new ArrayList<DetalleImpuesto>();
         
         newFLine.setLinea(lineCount);
         
@@ -248,6 +256,10 @@ public class ControladorParser implements IParser {
         newFLine.setDescripcion(lineDescription);
         newFLine.setPrecioUnitario(newFLine.getMonto().divide(BigDecimal.valueOf(newFLine.getCantidad())));
         newFLine.setUnidadMedida("Unid");
+        dImpuesto.add(new DetalleImpuesto());
+        dImpuesto.get(0).setTarifa(pConfiguration.getTaxPercentage());
+        dImpuesto.get(0).setMonto(newFLine.getSubTotal().multiply(dImpuesto.get(0).getTarifa()));       
+        newFLine.setdImpuesto(dImpuesto);
         
         return newFLine;
     }
