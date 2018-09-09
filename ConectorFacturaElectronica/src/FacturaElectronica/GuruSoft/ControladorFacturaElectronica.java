@@ -348,6 +348,7 @@ public class ControladorFacturaElectronica implements Runnable {
             clsTiquete.setCodMedioPago2(factura.getCodigMedioPago2());
             clsTiquete.setCodMedioPago3(factura.getCodigMedioPago3());
             clsTiquete.setCodMedioPago4(factura.getCodigMedioPago4());
+            clsTiquete.setTotalMercanciasGravadas(factura.getTotalVenta());
             clsTiquete.setTotalGravado(factura.getTotalVenta()); //En Lavu no hay produtos que no esten exentos.
             clsTiquete.setTotalVenta(factura.getTotalVenta());
             clsTiquete.setTotalDescuentos(factura.getTotalDescuentos());    //-
