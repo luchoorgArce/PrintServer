@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import interfaces.IInvoice;
 
 /**
  *
@@ -36,10 +37,11 @@ public class Factura implements IInvoice {
     private String correoElectronicoCliente = "";
     private int reintentos;
     private List<String> invoiceLinesToPrint;
+    private int indexHaciendaInformation = 0;
     
     public Factura(){
         this.detalleFactura = new ArrayList<DetalleFactura>();
-        this.invoiceLinesToPrint = new List<String>;
+        this.invoiceLinesToPrint = new ArrayList<String>();
     }
     
     public Factura(int secuencia, String idOrden, BigDecimal totalVenta, BigDecimal totalImpuesto, BigDecimal totalComprante, List<DetalleFactura> detalleFactura, String condicionVenta, String codigMedioPago1) {
