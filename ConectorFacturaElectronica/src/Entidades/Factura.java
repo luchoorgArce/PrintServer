@@ -25,7 +25,7 @@ public class Factura implements IInvoice {
     private BigDecimal totalImpuesto = new BigDecimal("0.0");;
     private BigDecimal totalComprante = new BigDecimal("0.0");;
     private List<DetalleFactura> detalleFactura;
-    private String condicionVenta;
+    private String condicionVenta = "01";
     private String codigMedioPago1 = "";
     private String codigMedioPago2 = "";
     private String codigMedioPago3 = "";
@@ -56,8 +56,14 @@ public class Factura implements IInvoice {
     }
     
     public void addHaciendaInfo(String invoiceKey, String invoiceConsecutive) {
-        invoiceLinesToPrint.add(indexHaciendaInformation, "Tiquete#: " + invoiceConsecutive);
-        invoiceLinesToPrint.add(indexHaciendaInformation, "Clave#: " + invoiceKey);       
+        if ((invoiceLinesToPrint.get(indexHaciendaInformation).contains("Tiquete")) || 
+            (invoiceLinesToPrint.get(indexHaciendaInformation).contains("Clave"))) {
+            invoiceLinesToPrint.remove(indexHaciendaInformation);
+            invoiceLinesToPrint.remove(indexHaciendaInformation);
+        }
+
+        invoiceLinesToPrint.add(indexHaciendaInformation, "Clave#: " + invoiceKey);
+        invoiceLinesToPrint.add(indexHaciendaInformation, "Tiquete#: " + invoiceConsecutive);           
     }
     
     public int getIndexHaciendaInformation() {
