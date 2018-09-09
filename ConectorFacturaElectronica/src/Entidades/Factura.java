@@ -18,22 +18,22 @@ public class Factura {
 
     private int secuencia;
     private String idOrden;
-    private BigDecimal totalVenta;
-    private BigDecimal totalDescuentos;
-    private BigDecimal totalVentaNeta;    
-    private BigDecimal totalImpuesto;
-    private BigDecimal totalComprante;
+    private BigDecimal totalVenta = new BigDecimal("0.0"); 
+    private BigDecimal totalDescuentos = new BigDecimal("0.0");;
+    private BigDecimal totalVentaNeta = new BigDecimal("0.0");;    
+    private BigDecimal totalImpuesto = new BigDecimal("0.0");;
+    private BigDecimal totalComprante = new BigDecimal("0.0");;
     private List<DetalleFactura> detalleFactura;
     private String condicionVenta;
-    private String codigMedioPago1;
-    private String codigMedioPago2;
-    private String codigMedioPago3;
-    private String codigMedioPago4;
+    private String codigMedioPago1 = "";
+    private String codigMedioPago2 = "";
+    private String codigMedioPago3 = "";
+    private String codigMedioPago4 = "";
     private Date fechaAutorizacion;
-    private String numeroConsecutivo;
-    private String claveComprobante;
-    private String nombreCliente;
-    private String correoElectronicoCliente;
+    private String numeroConsecutivo = "";
+    private String claveComprobante = "";
+    private String nombreCliente = "";
+    private String correoElectronicoCliente = "";
     private int reintentos;
     
     public Factura(){
@@ -219,5 +219,20 @@ public class Factura {
      */
     public void setReintentos(int reintentos) {
         this.reintentos = reintentos;
+    }
+    
+    public void setPaymentMethod(String paymentMethod) {
+        if (codigMedioPago1.equals("")) {
+            setCodigMedioPago1(paymentMethod);
+        }
+        else if (codigMedioPago2.equals("")) {
+            setCodigMedioPago2(paymentMethod);
+        }
+        else if (codigMedioPago3.equals("")) {
+            setCodigMedioPago3(paymentMethod);
+        }
+        else {
+            setCodigMedioPago4(paymentMethod);
+        }
     }
 }

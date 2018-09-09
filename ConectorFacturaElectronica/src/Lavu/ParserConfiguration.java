@@ -10,11 +10,31 @@ import java.util.Map;
 
 public class ParserConfiguration {
     private Map<String, String> paymentMethods = new HashMap<String, String>();
-    //private Map<String, String> payMethods = new HashMap<String, String>(); //TODO: Implemente the part with all the others strings
+    private Map<String, String> parserKeyWords = new HashMap<String, String>(); //TODO: Implemente the part with all the others strings
+    
+    
     private String laguague = "English"; // Spanish is second option - get it from config file
     
-    public ParserConfiguration() {
+    public ParserConfiguration(String lang) {
+        laguague = lang;
         buildPayMethods();
+        buildParserKeyWords();
+    }
+    
+    private void buildParserKeyWords() {
+        parserKeyWords.put("DISCOUNTLINE", "off");
+        parserKeyWords.put("COUPON", "Coupon");
+        parserKeyWords.put("TAXESLINE", "IVA");
+        parserKeyWords.put("TOTALLINE", "Total");
+        parserKeyWords.put("SUBTOTALLINE", "Subtotal");
+        
+        //TODO: Get it from a file
+        if (laguague.equals("English")) { 
+            parserKeyWords.put("ORDERIDLINE", "Order");
+        }
+        else if (laguague.equals("Spanish")) {
+            parserKeyWords.put("ORDERIDLINE", "Orden");
+        }    
     }
     
     private void buildPayMethods() {
@@ -34,5 +54,17 @@ public class ParserConfiguration {
         }
         
         return paymentMethods;
+    }
+    
+    public Map<String, String> getParserKeyWords() {
+        if (parserKeyWords.isEmpty()) {
+            buildParserKeyWords();
+        }
+        
+        return parserKeyWords;
+    }
+    
+    public void setLanguage(String lang) {
+        laguague = lang;
     }
 }

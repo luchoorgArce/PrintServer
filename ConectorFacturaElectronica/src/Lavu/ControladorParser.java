@@ -20,15 +20,7 @@ import java.util.Map;
  */
 public class ControladorParser implements IParser {
     // Move all these to a Properties/Configuration class
-    private final static String ORDERIDLINEA = "Order #:";
-    private final static String TOTALLINEA = "Total:"; //TODO: Esto debe reaccionar a la configuracion de lenguge de LAVU
-    private final static String SUBTOTALLINEA = "Subtotal:"; //TODO: Esto debe reaccionar a la configuracion de lenguge de LAVU
-    private final static String DISCOUNTLINE = "off";
-    private final static String TAXESLINE = "IVA";
-    
-    
-    
-    private ParserConfiguration pConfiguration = new ParserConfiguration();
+    private ParserConfiguration pConfiguration = new ParserConfiguration("Spanish"); //TODO: Demo proposes
     private final static String FACTURADIVISIONES = "------";
     private final static int HEADERSECTION = 0;
     private final static int DETAILSSECTION = 1;
@@ -37,6 +29,7 @@ public class ControladorParser implements IParser {
       
     @Override 
     public void procesarFactura(String rawFactura, String[] lineasFactura){
+        
         String orderId = getOrderId(lineasFactura);
         
         
@@ -56,8 +49,10 @@ public class ControladorParser implements IParser {
         int currentSecction = HEADERSECTION;
         int lineasConteo = 0;
         
+        nuevaFactura.setIdOrden(orderID);
+        
         for(int index = 0; index < lineasFactura.length; index++) {
-            if (esLineaValida(lineasFactura[index])) {
+            if (isLineValid(lineasFactura[index])) {
                 if (isInvoiceDivision(lineasFactura[index])) {
                     currentSecction += 1;
                     continue;
@@ -76,50 +71,54 @@ public class ControladorParser implements IParser {
     }
     
     private void processInvoiceDetailSection(Factura invoice, String line) {
-        int lineCount = 0;
+        int lineCount = invoice.getDetalleFactura().size();
+        String discountLine = pConfiguration.getParserKeyWords().get("DISCOUNTLINE");
+            String coupon = pConfiguration.getParserKeyWords().get("COUPON");
         
-        if (isFirstCharNumber(line)) {
+        if (isFirstCharNumber(line) && (!line.contains(discountLine))) {
             lineCount += 1;
             DetalleFactura dFactura = construirDetalleFactura(line, lineCount);                       
             dFactura.setLinea(lineCount);
             invoice.setDetalleFactura(dFactura);
         }
         else {
-            DetalleFactura dFActura = invoice.getDetalleFactura().get(lineCount - 1);
+            DetalleFactura dFActura = invoice.getDetalleFactura().get(lineCount - 1);      
             BigDecimal additionalAmount = new BigDecimal(getInvoiceDetailAdditionalAmount(line));
-            if (additionalAmount.compareTo(BigDecimal.ZERO) > 0) {   
+            
+            if((line.contains(discountLine)|| (line.contains(coupon)))) {
+                dFActura.setMontoDescuento(additionalAmount);
+                dFActura.setNaturalezaDescuento(getLineaContenido(line, 3));
+                dFActura.setSubTotal(dFActura.getMonto().subtract(additionalAmount));
+                dFActura.setMontoTotalLinea(dFActura.getSubTotal());
+            }
+            else {
                 dFActura.setMonto(dFActura.getMonto().add(additionalAmount));
                 dFActura.setSubTotal(dFActura.getMonto());
                 dFActura.setMontoTotalLinea(dFActura.getSubTotal());
                 dFActura.setPrecioUnitario(dFActura.getMonto().divide(BigDecimal.valueOf(dFActura.getCantidad())));
-            }
-            else {          
-                 // It is a line discount
-                 dFActura.setMontoDescuento(additionalAmount);
-                 dFActura.setNaturalezaDescuento(getLineaContenido(line, 3));
-                 dFActura.setSubTotal(dFActura.getMonto().add(additionalAmount));
-                 dFActura.setMontoTotalLinea(dFActura.getSubTotal());
-            }                        
+            }                       
         }
     }
     
     private void processTotalSection(Factura invoice, String line) {
         String paymentMethod = "";
+        Map<String, String> pKeyWords = pConfiguration.getParserKeyWords();
         
-        if (line.contains(SUBTOTALLINEA)) {
+        if (line.contains(pKeyWords.get("SUBTOTALLINE"))) {
             BigDecimal subTotal = new BigDecimal(getNumberBackward(line));
             invoice.setTotalVenta(subTotal); 
         }
-        else if (line.contains(TOTALLINEA) && !line.contains(SUBTOTALLINEA)) {
+        else if (line.contains(pKeyWords.get("TOTALLINE")) && 
+                !line.contains(pKeyWords.get("SUBTOTALLINE"))) {
             BigDecimal total = new BigDecimal(getNumberBackward(line));
             invoice.setTotalComprante(total);
         }
-        else if(line.contains(DISCOUNTLINE)) {
+        else if(line.contains(pKeyWords.get("DISCOUNTLINE"))) {
             BigDecimal discountTotal = new BigDecimal(getNumberBackward(line));
             invoice.setTotalDescuentos(discountTotal);
             invoice.setTotalVentaNeta(invoice.getTotalVenta().subtract(invoice.getTotalDescuentos()));
         }
-        else if(line.contains(TAXESLINE)) {
+        else if(line.contains(pKeyWords.get("TAXESLINE"))) {
              BigDecimal taxes = new BigDecimal(getNumberBackward(line));
              invoice.setTotalImpuesto(taxes);
         }
@@ -159,7 +158,6 @@ public class ControladorParser implements IParser {
         
         for(int index = chars.length - 1; index >= 0; index--) {
             if((Character.isDigit(chars[index].charAt(0))) ||
-               (chars[index].equals("-")) ||
                (chars[index].equals(".")) ||
                (chars[index].equals(","))) {
                 total = chars[index] + total;
@@ -231,20 +229,31 @@ public class ControladorParser implements IParser {
         newFLine.setSubTotal(lineAmount);
         newFLine.setMontoTotalLinea(lineAmount);
         newFLine.setDescripcion(lineDescription);
-          
+        newFLine.setPrecioUnitario(newFLine.getMonto().divide(BigDecimal.valueOf(newFLine.getCantidad())));
+        newFLine.setUnidadMedida("Unid");
+        
         return newFLine;
     }
     
-    private String getOrderId(String[] lineasFactura) {
+    private String getOrderId(String[] InvoiceLines) {
         String orderId = "";
+        String orderIDKeyWord = pConfiguration.getParserKeyWords().get("ORDERIDLINE");
         
-        for(int index = 0; index < lineasFactura.length; index++) {
-            if (esLineaValida(lineasFactura[index]) &&
-                lineasFactura[index].indexOf(ORDERIDLINEA) >= 0) {
-                int indexOrderId = lineasFactura[index].indexOf(ORDERIDLINEA) + ORDERIDLINEA.length() + 1;
-                orderId = getOrderIdDeLinea(lineasFactura[index], indexOrderId);
-                break;
+        for(int index = 0; index < InvoiceLines.length; index++) {
+            if (isLineValid(InvoiceLines[index])) {
+                if (InvoiceLines[index].contains(orderIDKeyWord)){
+                    String lineTrim = InvoiceLines[index].trim();
+                    for(int lineTrimIndex = InvoiceLines[index].indexOf(orderIDKeyWord); lineTrim.length() > lineTrimIndex; lineTrimIndex++) {
+                        if (Character.isDigit(lineTrim.charAt(lineTrimIndex))) {
+                            orderId = getOrderIdDeLinea(InvoiceLines[index], lineTrimIndex);
+                            break;
+                        }
+                    }
+                    
+                    break;
+                }
             }
+            
         }
                
         return orderId;
@@ -292,7 +301,7 @@ public class ControladorParser implements IParser {
         return result;
     }
     
-    private boolean esLineaValida(String linea) {
+    private boolean isLineValid(String linea) {
         return linea != null && linea != "";
     }
     
@@ -312,11 +321,5 @@ public class ControladorParser implements IParser {
         }
         
         return result;
-    }
-    
-    private boolean lineaContieneTotal(String linea) {
-        return (linea.indexOf(TOTALLINEA) >= 0) && (linea.indexOf(SUBTOTALLINEA) < 0);
-    }
-    
-    
+    }    
 }
