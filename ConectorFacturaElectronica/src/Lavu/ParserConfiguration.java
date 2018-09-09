@@ -12,7 +12,6 @@ public class ParserConfiguration {
     private Map<String, String> paymentMethods = new HashMap<String, String>();
     private Map<String, String> parserKeyWords = new HashMap<String, String>(); //TODO: Implemente the part with all the others strings
     
-    
     private String laguague = "English"; // Spanish is second option - get it from config file
     
     public ParserConfiguration(String lang) {

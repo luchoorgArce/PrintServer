@@ -12,6 +12,8 @@ import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import interfaces.IParser;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -29,7 +31,7 @@ public class ControladorSocket implements Runnable{
     }
     
     private void AbrirSocket(){
-        String[] lineasFactura = new String[lineasMax]; //TODO: Define a good number
+        List<String> invoiceLines = new ArrayList<String>();
         String request = "";
         String lineaActual = "";
         int lineaActualIndex = 0;
@@ -45,14 +47,14 @@ public class ControladorSocket implements Runnable{
                 BufferedReader socketReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));              
                                               
                 while ((lineaActual = socketReader.readLine()) != null) {
-                    lineasFactura[lineaActualIndex] = lineaActual;
+                    invoiceLines.add(lineaActual);
                     request += lineaActual;
                     lineaActualIndex += 1;
                 }
                 
-                parser.procesarFactura(request, lineasFactura);
+                parser.procesarFactura(request, invoiceLines);
 
-                lineasFactura = new String[lineasMax]; //TODO: Define a good number
+                invoiceLines.clear();
                 request = "";
                 lineaActual = "";
                 lineaActualIndex = 0;
