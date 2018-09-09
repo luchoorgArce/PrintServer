@@ -55,6 +55,19 @@ public class Factura implements IInvoice {
         this.codigMedioPago1 = codigMedioPago1;
     }
     
+    public void addHaciendaInfo(String invoiceKey, String invoiceConsecutive) {
+        invoiceLinesToPrint.add(indexHaciendaInformation, "Tiquete#: " + invoiceConsecutive);
+        invoiceLinesToPrint.add(indexHaciendaInformation, "Clave#: " + invoiceKey);       
+    }
+    
+    public int getIndexHaciendaInformation() {
+        return this.indexHaciendaInformation;
+    }
+    
+    public void setIndexHaciendaInformation(int index) {
+        this.indexHaciendaInformation = index;
+    }
+    
     public List<String> getInvoiceLinesToPrint() {
         return this.invoiceLinesToPrint;
     }
