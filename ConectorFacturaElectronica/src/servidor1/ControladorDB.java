@@ -9,6 +9,7 @@ import Entidades.DatosEmpresa;
 import Entidades.Factura;
 import Entidades.DetalleFactura;
 import Entidades.Estado;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -275,5 +276,120 @@ public class ControladorDB {
                 Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
             }
         }  
+    }
+    
+    public void InsertInvoice(Factura factura){
+        Connection conn = null;
+        String sql1 = "Insert Into Facturas (Estado,";
+        String sql2 = "Values (0,";
+        //String sql3 = "select max(Secuencia) Maximo from Facturas;";
+        String sql3 = "select last_insert_rowid() Consecutivo;";
+        
+        try{            
+            conn = this.Connect();
+            
+            //Se arma la trama encabezado de la base de datos:
+            
+            sql1 += "IdOrden,";
+            sql2 += "'" + factura.getIdOrden() + "',";
+            
+            sql1 += "TotalVenta,";
+            sql2 += factura.getTotalVenta() + ",";
+            
+            if(factura.getTotalDescuentos().compareTo(BigDecimal.ZERO) > 0){
+                sql1 += "TotalDescuento,";
+                sql2 += factura.getTotalDescuentos() + ",";       
+            }
+            
+            sql1 += "TotalVentaNeta,";
+            sql2 += factura.getTotalVentaNeta() + ",";
+            
+            if(factura.getTotalImpuesto().compareTo(BigDecimal.ZERO) > 0){
+                sql1 += "TotalImpuesto,";
+                sql2 += factura.getTotalImpuesto() + ",";       
+            }
+            
+            sql1 += "TotalComprobante,";
+            sql2 += factura.getTotalComprante() + ",";
+            
+            sql1 += "CodCondicionVenta,";
+            sql2 += "'" + factura.getCondicionVenta() + "',";
+            
+            if(!factura.getCodigMedioPago1().equals("")){
+                sql1 += "CodMedioPago1,";
+                sql2 += "'" + factura.getCodigMedioPago1() + "',";       
+            }
+            
+            if(!factura.getCodigMedioPago2().equals("")){
+                sql1 += "CodMedioPago2,";
+                sql2 += "'" + factura.getCodigMedioPago2() + "',";      
+            }
+            
+            if(!factura.getCodigMedioPago3().equals("")){
+                sql1 += "CodMedioPago3,";
+                sql2 += "'" + factura.getCodigMedioPago3() + "',";      
+            }
+
+            if(!factura.getCodigMedioPago4().equals("")){
+                sql1 += "CodMedioPago4,";
+                sql2 += "'" + factura.getCodigMedioPago4() + "',";      
+            }
+            
+            sql1 += "Reintentos)";
+            sql2 += "0)";
+            
+            PreparedStatement pstmt = conn.prepareStatement(sql1 + sql2);
+            pstmt.executeUpdate();
+            
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql3);
+
+            int consecutivo = 0;
+            
+            while (rs.next()) {
+                consecutivo = rs.getInt("Consecutivo");
+                System.out.println(consecutivo);
+            }
+            
+            //Se arma la trama detalle de la base de datos:
+            
+            for(int i = 0; i < factura.getDetalleFactura().size(); i++){
+                sql1 = "Insert Into DetalleFactura (Secuencia, Linea, Descripcion, Cantidad, UnidadMedida, PrecioUnitario, Monto, SubTotal, MontoTotalLinea";
+                sql2 = "Values (?, ?, ?, ?, ?, ?, ?, ?, ?";       
+                
+                if(factura.getDetalleFactura().get(i).getMontoDescuento().compareTo(BigDecimal.ZERO) > 0){
+                    sql1 += ", MontoDescuento, NaturalezaDescuento)";
+                    sql2 += ", " + factura.getDetalleFactura().get(i).getMontoDescuento() + ", '" + factura.getDetalleFactura().get(i).getNaturalezaDescuento() + "');";
+                }else{
+                    sql1 += ")";
+                    sql2 += ");";
+                }
+                
+                pstmt = conn.prepareStatement(sql1 + sql2);
+                
+                pstmt.setInt(1, consecutivo);
+                pstmt.setInt(2, factura.getDetalleFactura().get(i).getLinea());
+                pstmt.setString(3, factura.getDetalleFactura().get(i).getDescripcion());
+                pstmt.setInt(4, factura.getDetalleFactura().get(i).getCantidad());
+                pstmt.setString(5, factura.getDetalleFactura().get(i).getDescripcion());
+                pstmt.setBigDecimal(6, factura.getDetalleFactura().get(i).getPrecioUnitario());
+                pstmt.setBigDecimal(7, factura.getDetalleFactura().get(i).getMonto());
+                pstmt.setBigDecimal(8, factura.getDetalleFactura().get(i).getSubTotal());
+                pstmt.setBigDecimal(9, factura.getDetalleFactura().get(i).getMontoTotalLinea());                                
+            }
+                        
+            pstmt.executeUpdate();         
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (conn != null && !conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 }
