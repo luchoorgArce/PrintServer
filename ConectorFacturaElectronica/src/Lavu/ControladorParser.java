@@ -119,13 +119,15 @@ public class ControladorParser implements IParser {
         if (line.contains(pKeyWords.get("SUBTOTALLINE"))) {
             BigDecimal subTotal = new BigDecimal(getNumberBackward(line));
             invoice.setTotalVenta(subTotal); 
+            invoice.setTotalVentaNeta(subTotal);
         }
         //TODO: CHECK IF 10% IS REQUIRE
-        /*else if (line.contains(pKeyWords.get("TOTALLINE")) && 
+        else if (line.contains(pKeyWords.get("TOTALLINE")) && 
                 !line.contains(pKeyWords.get("SUBTOTALLINE"))) {
-            BigDecimal total = new BigDecimal(getNumberBackward(line));
-            invoice.setTotalComprante(total); //TODO: CHECK IF 10% IS REQUIRE
-        }*/
+            //BigDecimal total = new BigDecimal(getNumberBackward(line));
+            //invoice.setTotalComprante(total); //TODO: CHECK IF 10% IS REQUIRE
+            invoice.setTotalComprante(invoice.getTotalVentaNeta().add(invoice.getTotalImpuesto()));
+        }
         else if(line.contains(pKeyWords.get("DISCOUNTLINE"))) {
             BigDecimal discountTotal = new BigDecimal(getNumberBackward(line));
             invoice.setTotalDescuentos(discountTotal);
