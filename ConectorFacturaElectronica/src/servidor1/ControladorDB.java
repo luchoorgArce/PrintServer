@@ -94,6 +94,7 @@ public class ControladorDB {
     public List<Factura> BuscarFacturas(Estado estado) {
 
         List<Factura> lista = new ArrayList<Factura>();
+        List<String> lineas = new ArrayList<String>();
         boolean primerRegistro = true;
         int consecutivo = 0;
         Factura factura = null;
@@ -139,6 +140,8 @@ public class ControladorDB {
                 if (consecutivo != rs.getInt("Secuencia")) {
                     
                     if (!primerRegistro) {
+                        lineas = SearchLinesToPrint(factura.getSecuencia(), conn);
+                        factura.setInvoiceLinesToPrint(lineas);
                         lista.add(factura);                      
                     }else{
                         primerRegistro = false;
@@ -167,8 +170,10 @@ public class ControladorDB {
                 }
             }
             if(factura != null){
+                lineas = SearchLinesToPrint(factura.getSecuencia(), conn);
+                factura.setInvoiceLinesToPrint(lineas);                
                 lista.add(factura);
-            }                        
+            }                      
         } catch (SQLException ex) {
             Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -182,6 +187,26 @@ public class ControladorDB {
         }
 
         return lista;
+    }
+    
+    public List<String> SearchLinesToPrint(int secuencia, Connection conn){
+        List<String> lineas = new ArrayList<String>();
+        try
+        {
+            String sql = "select TextoLinea LineasPorImprimir Where SecuenciaFactura = " + secuencia + " Order By NumeroLinea asc";
+            
+            Statement stmt = conn.createStatement();            
+            ResultSet rs = stmt.executeQuery(sql);                        
+
+            while (rs.next()) {   
+                lineas.add(rs.getString("TextoLinea"));
+            }
+        }
+        catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        }   
+        
+        return lineas;
     }
     
     public void AgregarResultado(
@@ -288,8 +313,7 @@ public class ControladorDB {
         try{            
             conn = this.Connect();
             
-            //Se arma la trama encabezado de la base de datos:
-            
+            //Se arma la trama encabezado de la base de datos:            
             sql1 += "IdOrden,";
             sql2 += "'" + factura.getIdOrden() + "',";
             
@@ -351,10 +375,9 @@ public class ControladorDB {
                 System.out.println(consecutivo);
             }
             
-            //Se arma la trama detalle de la base de datos:
-            
+            //Se arma la trama detalle de la base de datos:            
             for(int i = 0; i < factura.getDetalleFactura().size(); i++){
-                sql1 = "Insert Into DetalleFactura (Secuencia, Linea, Descripcion, Cantidad, UnidadMedida, PrecioUnitario, Monto, SubTotal, MontoTotalLinea";
+                sql1 = "Insert Into DetalleFactura (SecuenciaFactura, Linea, Descripcion, Cantidad, UnidadMedida, PrecioUnitario, Monto, SubTotal, MontoTotalLinea";
                 sql2 = "Values (?, ?, ?, ?, ?, ?, ?, ?, ?";       
                 
                 if(factura.getDetalleFactura().get(i).getMontoDescuento().compareTo(BigDecimal.ZERO) > 0){
@@ -375,10 +398,21 @@ public class ControladorDB {
                 pstmt.setBigDecimal(6, factura.getDetalleFactura().get(i).getPrecioUnitario());
                 pstmt.setBigDecimal(7, factura.getDetalleFactura().get(i).getMonto());
                 pstmt.setBigDecimal(8, factura.getDetalleFactura().get(i).getSubTotal());
-                pstmt.setBigDecimal(9, factura.getDetalleFactura().get(i).getMontoTotalLinea());                                
+                pstmt.setBigDecimal(9, factura.getDetalleFactura().get(i).getMontoTotalLinea());     
+                pstmt.executeUpdate(); 
+            }                             
+            
+            //Se inserta la línea por imprimir.
+            int count = 1;
+            for(int i = 0; i < factura.getInvoiceLinesToPrint().size(); i++){                
+                sql1 = "Insert Into LineasPorImprimir(SecuenciaFactura, TextoLinea, NumeroLinea) Values (?, ?, ?)";
+                pstmt = conn.prepareStatement(sql1);
+                pstmt.setInt(1, consecutivo);
+                pstmt.setString(2, factura.getInvoiceLinesToPrint().get(i));
+                pstmt.setInt(3, count);
+                pstmt.executeUpdate();  
+                count++;
             }
-                        
-            pstmt.executeUpdate();         
             
         } catch (SQLException ex) {
             Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
