@@ -13,7 +13,9 @@ import Entidades.Factura;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.util.ArrayList;
+import java.util.List;
+import servidor1.ControladorDB;
 /**
  *
  * @author luis.arce
@@ -21,6 +23,7 @@ import java.util.Map;
 public class ControladorParser implements IParser {
     // Move all these to a Properties/Configuration class
     private ParserConfiguration pConfiguration = new ParserConfiguration("Spanish"); //TODO: Demo proposes
+    private ControladorDB cDB = new ControladorDB();
     private final static String FACTURADIVISIONES = "------";
     private final static int HEADERSECTION = 0;
     private final static int DETAILSSECTION = 1;
@@ -28,7 +31,7 @@ public class ControladorParser implements IParser {
     private final static int COMPANYINFOSECTION = 3;
       
     @Override 
-    public void procesarFactura(String rawFactura, String[] lineasFactura){
+    public void procesarFactura(String rawFactura, List<String> lineasFactura){
         
         String orderId = getOrderId(lineasFactura);
         
@@ -40,29 +43,38 @@ public class ControladorParser implements IParser {
         // Get information from the invoice
         Factura newInvoice = getFacturaInformation(lineasFactura, orderId);
         
+        cDB.InsertInvoice(newInvoice);
+        
         System.out.println(orderId + "|");
         System.out.println("Factura Procesada correctamente");
     }
     
-    private Factura getFacturaInformation(String[] lineasFactura, String orderID){
+    private Factura getFacturaInformation(List<String> lineasFactura, String orderID){
         Factura nuevaFactura = new Factura(); //TODO: Set Default values of BigDecimals to Cero
+        nuevaFactura.setInvoiceLinesToPrint(new ArrayList(lineasFactura));
         int currentSecction = HEADERSECTION;
         int lineasConteo = 0;
         
         nuevaFactura.setIdOrden(orderID);
         
-        for(int index = 0; index < lineasFactura.length; index++) {
-            if (isLineValid(lineasFactura[index])) {
-                if (isInvoiceDivision(lineasFactura[index])) {
+        for(int index = 0; index < lineasFactura.size(); index++) {
+            String currentLine = lineasFactura.get(index);
+            
+            if (isLineValid(currentLine)) {
+                if (isInvoiceDivision(currentLine)) {
                     currentSecction += 1;
                     continue;
                 }
                 
                 if (currentSecction == TOTALSSECTION) {
-                    processTotalSection(nuevaFactura, lineasFactura[index]);
+                    processTotalSection(nuevaFactura, currentLine);
+                    
+                    
                 }
                 else if(currentSecction == DETAILSSECTION) {
-                    processInvoiceDetailSection(nuevaFactura, lineasFactura[index]);
+                    processInvoiceDetailSection(nuevaFactura, currentLine);
+                    nuevaFactura.setIndexHaciendaInformation(index - 2); // Put Hacienda Key and Secuencia
+                    nuevaFactura.addHaciendaInfo("", "");
                 }
             }
         }
@@ -235,17 +247,19 @@ public class ControladorParser implements IParser {
         return newFLine;
     }
     
-    private String getOrderId(String[] InvoiceLines) {
+    private String getOrderId(List<String> InvoiceLines) {
         String orderId = "";
         String orderIDKeyWord = pConfiguration.getParserKeyWords().get("ORDERIDLINE");
         
-        for(int index = 0; index < InvoiceLines.length; index++) {
-            if (isLineValid(InvoiceLines[index])) {
-                if (InvoiceLines[index].contains(orderIDKeyWord)){
-                    String lineTrim = InvoiceLines[index].trim();
-                    for(int lineTrimIndex = InvoiceLines[index].indexOf(orderIDKeyWord); lineTrim.length() > lineTrimIndex; lineTrimIndex++) {
+        for(int index = 0; index < InvoiceLines.size(); index++) {
+            String currentLine = InvoiceLines.get(index);
+            
+            if (isLineValid(InvoiceLines.get(index))) {
+                if (currentLine.contains(orderIDKeyWord)){
+                    String lineTrim = currentLine.trim();
+                    for(int lineTrimIndex = currentLine.indexOf(orderIDKeyWord); lineTrim.length() > lineTrimIndex; lineTrimIndex++) {
                         if (Character.isDigit(lineTrim.charAt(lineTrimIndex))) {
-                            orderId = getOrderIdDeLinea(InvoiceLines[index], lineTrimIndex);
+                            orderId = getOrderIdDeLinea(currentLine, lineTrimIndex);
                             break;
                         }
                     }
