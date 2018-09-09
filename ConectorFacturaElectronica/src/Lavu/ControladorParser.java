@@ -103,17 +103,17 @@ public class ControladorParser implements IParser {
                 dFActura.setMontoDescuento(additionalAmount);
                 dFActura.setNaturalezaDescuento(getLineaContenido(line, 3));
                 dFActura.setSubTotal(dFActura.getMonto().subtract(additionalAmount));
-                dFActura.setMontoTotalLinea(dFActura.getSubTotal());
                 DetalleImpuesto dImpuesto = dFActura.getdImpuesto().get(0); // TODO: Only 1 tax for the lines
                 dImpuesto.setMonto(dFActura.getSubTotal().multiply(dImpuesto.getTarifa()));
+                dFActura.setMontoTotalLinea(dFActura.getSubTotal().add(dImpuesto.getMonto()));
             }
             else {
                 dFActura.setMonto(dFActura.getMonto().add(additionalAmount));
-                dFActura.setSubTotal(dFActura.getMonto());
-                dFActura.setMontoTotalLinea(dFActura.getSubTotal());
+                dFActura.setSubTotal(dFActura.getMonto());          
                 dFActura.setPrecioUnitario(dFActura.getMonto().divide(BigDecimal.valueOf(dFActura.getCantidad())));
                 DetalleImpuesto dImpuesto = dFActura.getdImpuesto().get(0); // TODO: Only 1 tax for the lines
                 dImpuesto.setMonto(dFActura.getSubTotal().multiply(dImpuesto.getTarifa()));
+                dFActura.setMontoTotalLinea(dFActura.getSubTotal().add(dImpuesto.getMonto()));
                 
             }                       
         }
@@ -252,13 +252,13 @@ public class ControladorParser implements IParser {
         newFLine.setCantidad(lineQuantity);
         newFLine.setMonto(lineAmount);
         newFLine.setSubTotal(lineAmount);
-        newFLine.setMontoTotalLinea(lineAmount);
         newFLine.setDescripcion(lineDescription);
         newFLine.setPrecioUnitario(newFLine.getMonto().divide(BigDecimal.valueOf(newFLine.getCantidad())));
         newFLine.setUnidadMedida("Unid");
         dImpuesto.add(new DetalleImpuesto());
         dImpuesto.get(0).setTarifa(pConfiguration.getTaxPercentage());
-        dImpuesto.get(0).setMonto(newFLine.getSubTotal().multiply(dImpuesto.get(0).getTarifa()));       
+        dImpuesto.get(0).setMonto(newFLine.getSubTotal().multiply(dImpuesto.get(0).getTarifa()));
+        newFLine.setMontoTotalLinea(newFLine.getSubTotal().add(dImpuesto.get(0).getMonto()));
         newFLine.setdImpuesto(dImpuesto);
         
         return newFLine;
