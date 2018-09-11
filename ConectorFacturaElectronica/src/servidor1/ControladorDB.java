@@ -31,13 +31,14 @@ public class ControladorDB {
     //Se abre la conexión:
     public Connection Connect() {
 
-        String url = "C:\\Users\\Usuario\\Documents\\Proyectos\\Lavu\\v1\\db\\Conectorlavu.db";
+        //String url = "C:\\Users\\Usuario\\Documents\\Proyectos\\Lavu\\v1\\db\\Conectorlavu.db";
+        String url = "/opt/Lavu/db/Conectorlavu.db";
         Connection connect = null;
 
         try {
             connect = DriverManager.getConnection("jdbc:sqlite:" + url);
             if (connect != null) {
-                System.out.println("Conectado");
+                //System.out.println("Conectado");
             }
         } catch (SQLException ex) {
             System.err.println("No se ha podido conectar a la base de datos\n" + ex.getMessage());

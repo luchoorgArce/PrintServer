@@ -1,5 +1,8 @@
 package servidor1;
 
+import Entidades.DatosEmpresa;
+import Entidades.DetalleFactura;
+import Entidades.Factura;
 import FacturaElectronica.GuruSoft.ControladorFacturaElectronica;
 import Lavu.ControladorERPConector;
 import Lavu.ControladorParser;
@@ -9,9 +12,20 @@ import WSTiqueteElectronco.ClsDetalleServicio;
 import WSTiqueteElectronco.ClsEmisor;
 import WSTiqueteElectronco.ClsOtros;
 import WSTiqueteElectronco.ClsReceptor;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -27,21 +41,80 @@ public class Servidor {
      */
     public static void main(String[] args) {
         
+        //ControladorDB
+        
+//        Factura factura = new Factura();
+//        factura.setIdOrden("1-556");
+//        factura.setTotalVenta(BigDecimal.TEN);
+//        factura.setTotalDescuentos(BigDecimal.ZERO);
+//        factura.setTotalVentaNeta(BigDecimal.TEN);
+//        factura.setTotalImpuesto(BigDecimal.TEN);
+//        factura.setTotalComprante(BigDecimal.TEN);
+//        factura.setCondicionVenta("01");
+//        factura.setCodigMedioPago1("01");
+//        factura.setCodigMedioPago2("");
+//        factura.setCodigMedioPago3("");
+//        factura.setCodigMedioPago4("");
+//        ControladorDB cDB = new ControladorDB();
+//        
+//        DetalleFactura dFactura = new DetalleFactura();
+//        dFactura.setCantidad(1);
+//        dFactura.setDescripcion("Prueba de detalle");
+//        dFactura.setLinea(1);
+//        dFactura.setMonto(BigDecimal.TEN);
+//        dFactura.setMontoTotalLinea(BigDecimal.TEN);
+//        dFactura.setPrecioUnitario(BigDecimal.TEN);
+//        dFactura.setMontoDescuento(BigDecimal.ZERO);
+//        dFactura.setSubTotal(BigDecimal.TEN);
+//        dFactura.setUnidadMedida("Unid");
+//        
+//        List<String> linesToPrint = new ArrayList<String>();
+//        linesToPrint.add("Hola Mundo 1");
+//        linesToPrint.add("Hola Mundo 2");
+//        linesToPrint.add("Hola Mundo 3");
+//        factura.setInvoiceLinesToPrint(linesToPrint);
+//        factura.setDetalleFactura(dFactura);
+//        cDB.InsertInvoice(factura);
+        
+        /*
+        try { 
+        Socket sock = new Socket("192.168.1.200", 9100); 
+        PrintWriter oStream = new PrintWriter(sock.getOutputStream()); 
+        oStream.print("HI,test from Android Device\n");
+        oStream.print("HI,test from Android Device\n");
+        oStream.close(); 
+        sock.close(); 
+        } catch (UnknownHostException e) { 
+            e.printStackTrace(); 
+        } catch (IOException e) { 
+            e.printStackTrace(); 
+        }
+        */
+        
+       
+        ControladorDB cBD = new ControladorDB();
+        DatosEmpresa datosEmpresa = cBD.ObtenerDatosEmpresa();
+        if(!datosEmpresa.getMensajeError().equals("NA"))
+            System.out.println("Datos de la empresa consultados correctamente.");
+        
+        //Se abre el puerto para impresiones entrantes:
         ControladorParser lavuParser = new ControladorParser();
         ControladorSocket socket = new ControladorSocket(lavuParser);
-        socket.run();
+        socket.start();
+                        
+        //Hilo de ejecucion para enviar facturas electrónicas a guru.
+        ControladorFacturaElectronica cFacturaElectronica = new ControladorFacturaElectronica(datosEmpresa);
+        cFacturaElectronica.start();        
+        
+        
+        //ControladorParser lavuParser = new ControladorParser();
+        //ControladorSocket socket = new ControladorSocket(lavuParser);
+        //socket.run();
         
         //Conector hacia Lavu para obtener los datos de las facturas.
         //ControladorERPConector cLavu = new ControladorERPConector();
         //cLavu.PostData("&table=orders&column=order_id&value=1024-88");
-        
-        //Se abre el puerto para impresiones entrantes:
-        //ControladorSocket cSocket = new ControladorSocket();
-        //cSocket.start();
-                        
-        //Hilo de ejecucion para enviar facturas electrónicas a guru.
-        //ControladorFacturaElectronica cFacturaElectronica = new ControladorFacturaElectronica();
-        //cFacturaElectronica.start();
+       
         
         //Hilo de ejecución para enviar facturas a imprimir.
         //ControladorImpresion cImpresion = new ControladorImpresion();
@@ -51,7 +124,7 @@ public class Servidor {
 //        WSTiqueteElectronco.ClsTiquete factura = new WSTiqueteElectronco.ClsTiquete(); 
 //        factura.setMatrizEstab(1);
 //        factura.setPuntoVenta(4);
-//        factura.setSecuencial(3);
+//        factura.setSecuencial(2);
 //
 //        Timestamp elTimeStamp = new Timestamp(System.currentTimeMillis());
 //        GregorianCalendar unGregorianCalendar = new GregorianCalendar();
@@ -76,14 +149,14 @@ public class Servidor {
 //        emisor.setCorreoElectronico("vichms06@hotmail.com");
 //        factura.setEmisor(emisor);
 //
-//        ClsReceptor receptor =  new ClsReceptor();
-//        receptor.setRazonSocial("123");
-//        receptor.setProvincia(1);
-//        receptor.setCanton(1);
-//        receptor.setDistrito(1);
-//        receptor.setBarrio(1);
-//        receptor.setDireccion("Prueba de dirección");
-//        factura.setReceptor(receptor);
+//        //ClsReceptor receptor =  new ClsReceptor();
+//        //receptor.setRazonSocial("123");
+//        //receptor.setProvincia(1);
+//        //receptor.setCanton(1);
+//        //receptor.setDistrito(1);
+//        //receptor.setBarrio(1);
+//        //receptor.setDireccion("Prueba de dirección");
+//        //factura.setReceptor(receptor);
 //
 //        factura.setTipoCambio(BigDecimal.ZERO);
 //        factura.setTotalServGravados(BigDecimal.ZERO);

@@ -39,7 +39,8 @@ public class ControladorSocket implements Runnable{
         try {                       
             ServerSocket serverSocket = new ServerSocket(PORT);
             System.out.println("Servidor> Servidor iniciado");    
-            System.out.println("Servidor> En espera de cliente...");    
+            System.out.println("Servidor> Esperando nuevos tiquetes...");    
+            
             Socket clientSocket;
             
             while(true){
