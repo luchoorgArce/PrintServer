@@ -46,7 +46,7 @@ public class ControladorFacturaElectronica implements Runnable {
     
     public ControladorFacturaElectronica(DatosEmpresa datosEmpresa){
         this.datosEmpresa = datosEmpresa;
-        System.out.println("Creating ControladorFacturaElectronica");
+        //System.out.println("Creating ControladorFacturaElectronica");
     }
     
     @Override
@@ -59,7 +59,7 @@ public class ControladorFacturaElectronica implements Runnable {
             } catch (InterruptedException ex) {
                 Logger.getLogger(ControladorFacturaElectronica.class.getName()).log(Level.SEVERE, null, ex);
             }
-            System.out.println("Hello from a thread ControladorFacturaElectronica!"); 
+            //System.out.println("Hello from a thread ControladorFacturaElectronica!"); 
         }
     }
     
@@ -82,12 +82,19 @@ public class ControladorFacturaElectronica implements Runnable {
         for (Factura factura : listaFacturas) {
             reintento = factura.getReintentos();
             json = gson.toJson(factura);
-            System.out.println("Factura " + factura.getSecuencia() + ": " + json);
+            //System.out.println("Factura " + factura.getSecuencia() + ": " + json);
             
-            WSTiqueteElectronco.ClsTiquete tiquete =  ConvertirATiqueteGuru(factura);
+            WSTiqueteElectronco.ClsTiquete tiquete =  ConvertirATiqueteGuru(factura);            
+            
+            try {
+                System.out.println("Enviando tiquete a hacienda con el Orden#: " + factura.getIdOrden());
+                Thread.sleep(5000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ControladorFacturaElectronica.class.getName()).log(Level.SEVERE, null, ex);
+            }         
             
             enviarTiquete(datosEmpresa.getPassword(), "2", tiquete, mensaje, enviarFacturaResult);
-            System.out.println("Mensaje: " + mensaje.value);
+            //System.out.println("Mensaje: " + mensaje.value);
             if(enviarFacturaResult.value.getEstado().equals("1") ||             //En proceso.
                     enviarFacturaResult.value.getEstado().equals("2") ||        //Autorizada.
                     enviarFacturaResult.value.getEstado().equals("5")){         //Recibido, en proceso por hacienda.
@@ -97,7 +104,15 @@ public class ControladorFacturaElectronica implements Runnable {
                 }else{
                    estadoFactura = Estado.EN_PROCESO;  
                 }
-
+                
+                try {
+                    System.out.println("Respuesta recibida de hacienda.");
+                    System.out.println("Tiquete electronico numero: " + enviarFacturaResult.value.getNumeroConsecutivo());
+                    System.out.println("Clave electronica numero: " + enviarFacturaResult.value.getClaveComprobante());                    
+                    Thread.sleep(5000);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(ControladorFacturaElectronica.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 //Se actualizan los datos en la tabla de facturas:
                 cDB.AgregarResultado(
                         factura.getSecuencia(),
@@ -125,7 +140,7 @@ public class ControladorFacturaElectronica implements Runnable {
    }
     
     public void start (){
-        System.out.println("Starting ControladorFacturaElectronica");
+        //System.out.println("Starting ControladorFacturaElectronica");
         if (t == null)
         {
             t = new Thread (this);
