@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import servidor1.ControladorDB;
 /**
  *
@@ -34,20 +36,24 @@ public class ControladorParser implements IParser {
     @Override 
     public void procesarFactura(String rawFactura, List<String> lineasFactura){
         
-        String orderId = getOrderId(lineasFactura);
         
-        
-        
-        /* TODO: First Try is get information from the API */
+        String orderId = getOrderId(lineasFactura);        
+        try {
+            System.out.println("Tiquete recibido de Lavu con orden#: " + orderId);
+            Thread.sleep(5000);            
+            /* TODO: First Try is get information from the API */
+        } catch (InterruptedException ex) {
+            Logger.getLogger(ControladorParser.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         
         // Get information from the invoice
         Factura newInvoice = getFacturaInformation(lineasFactura, orderId);
         
-        cDB.InsertInvoice(newInvoice);
+        cDB.InsertInvoice(newInvoice);             
         
-        System.out.println(orderId + "|");
-        System.out.println("Factura Procesada correctamente");
+        //System.out.println(orderId + "|");
+        //System.out.println("Factura Procesada correctamente");
     }
     
     private Factura getFacturaInformation(List<String> lineasFactura, String orderID){
