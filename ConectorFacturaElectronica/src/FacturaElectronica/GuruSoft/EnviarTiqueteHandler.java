@@ -75,9 +75,9 @@ public class EnviarTiqueteHandler implements SOAPHandler<SOAPMessageContext>{
                         env.getBody().detachNode();
                         SOAPBody soapBody = env.addBody();
                         soapBody.addChildElement(soapElementoCabecera1);
-                        System.out.print(element + " ");
+                        //System.out.print(element + " ");
                     }
-                    System.out.println();                
+                    //System.out.println();                
                 } catch (SOAPException e) {
                     e.printStackTrace();
                 }
