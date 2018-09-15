@@ -10,6 +10,7 @@ import Entidades.Factura;
 import Entidades.DetalleFactura;
 import Entidades.DetalleImpuesto;
 import Entidades.Estado;
+import Entidades.NotasCredito;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -17,10 +18,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.sqlite.SQLiteConfig;
+import org.sqlite.SQLiteConfig.Pragma;
 
 /**
  *
@@ -31,11 +37,14 @@ public class ControladorDB {
     //Se abre la conexión:
     public Connection Connect() {
 
-        //String url = "C:\\Users\\Usuario\\Documents\\Proyectos\\Lavu\\v1\\db\\Conectorlavu.db";
-        String url = "/opt/Lavu/db/Conectorlavu.db";
+        String url = "C:\\Users\\Usuario\\Documents\\Proyectos\\Lavu\\v1\\db\\Conectorlavu.db";
+        //String url = "/opt/Lavu/db/Conectorlavu.db";
         Connection connect = null;
 
         try {
+            SQLiteConfig sqLiteConfig = new SQLiteConfig();
+            Properties properties = sqLiteConfig.toProperties();
+            properties.setProperty(Pragma.DATE_STRING_FORMAT.pragmaName, "yyyy-MM-dd HH:mm:ss:SSS");            
             connect = DriverManager.getConnection("jdbc:sqlite:" + url);
             if (connect != null) {
                 //System.out.println("Conectado");
@@ -280,6 +289,46 @@ public class ControladorDB {
         }
     }
     
+    public void AgregarResultadoNotaCredito(
+            int Secuencia,
+            Estado estado, 
+            String fechaAutorizacion, 
+            String numeroConsecutivo, 
+            String claveComprobante
+    ) {
+        Connection conn = null;
+        String sql = "Update NotasCredito Set " 
+                + "Estado = ?, "
+                + "FechaAutorizacion = ?, "
+                + "NumeroConsecutivo = ?, "
+                + "ClaveComprobante = ? "
+                + "Where Secuencia = ?";
+
+        try {
+
+            conn = this.Connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, estado.toInt());
+            pstmt.setString(2, fechaAutorizacion);
+            pstmt.setString(3, numeroConsecutivo);
+            pstmt.setString(4, claveComprobante);
+            pstmt.setInt(5, Secuencia);
+            
+            pstmt.executeUpdate();
+
+        } catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (conn != null && !conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }    
+    
     public void GuardarBitacoraRechazos(int secuencia, String trama, String mensajeRespuesta){
         Connection conn = null;
         String sql = "INSERT INTO BitacoraEnviosRechazados(Secuencia,Trama,Respuesta) VALUES(?,?,?)";
@@ -473,4 +522,121 @@ public class ControladorDB {
             }
         }
     }
+    
+    //0:Creada, cuando se ingresa un nuevo registro desde el parser.
+    //1:Autorizada en Hacienda.
+    //2:No autorizada.
+    //3:En proceso, en estos casos se debe volver a preguntar por el estado.
+    //4:Impresa.
+    public List<NotasCredito> BuscarNotasCredito(Estado estado) {
+
+        List<NotasCredito> lista = new ArrayList<NotasCredito>();
+        List<String> lineas = new ArrayList<String>();
+        boolean primerRegistro = true;
+        int consecutivo = 0;
+        NotasCredito notaCredito = null;
+        DetalleFactura dFactura = null;
+        List<DetalleImpuesto> dImpuestos = null;
+
+        //Factura factura = new Factura();
+        //String sql = "Select * From Facturas Where Estado = " + estado; 
+        String sql = "select ";
+        sql = sql + "t1.Secuencia, tf.IdOrden, t1.Estado, tf.TotalVenta, tf.TotalImpuesto, tf.TotalComprobante, ";
+        sql = sql + "tf.TotalDescuento, tf.TotalVentaNeta, ";
+        sql = sql + "tf.CodCondicionVenta, tf.CodMedioPago1, tf.CodMedioPago2, tf.CodMedioPago3, tf.CodMedioPago4, ";
+        sql = sql + "t2.Linea, t2.Descripcion, t2.Cantidad, t2.UnidadMedida, t2.PrecioUnitario, ";
+        sql = sql + "t2.Monto, t2.MontoDescuento, t2.NaturalezaDescuento, t2.SubTotal, ";
+        sql = sql + "t2.MontoTotalLinea, ";
+        sql = sql + "tf.NombreCliente, tf.CorreoElectronicoCliente, t1.Reintentos, t1.IndexHaciedaInformation, ";
+        sql = sql + "tf.NumeroConsecutivo, tf.FechaAutorizacion ";
+        sql = sql + "from NotasCredito t1 ";
+        sql = sql + "inner join Facturas tf On t1.NumeroReferencia = tf.NumeroConsecutivo ";
+        sql = sql + "inner join DetalleFactura t2 On tf.Secuencia = t2.SecuenciaFactura ";
+        sql = sql + "Where t1.Estado = " + estado.toInt() + " ";
+        sql = sql + "Order By t1.Secuencia, t2.Linea asc";
+        Connection conn = null;
+
+        try {
+
+            conn = this.Connect();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+
+                dFactura = new DetalleFactura();
+                dFactura.setCantidad(rs.getInt("Cantidad"));
+                dFactura.setDescripcion(rs.getString("Descripcion"));
+                dFactura.setLinea(rs.getInt("Linea"));
+                dFactura.setMonto(rs.getBigDecimal("Monto"));
+                dFactura.setMontoDescuento(rs.getBigDecimal("MontoDescuento"));
+                dFactura.setMontoTotalLinea(rs.getBigDecimal("MontoTotalLinea"));
+                dFactura.setNaturalezaDescuento(rs.getString("NaturalezaDescuento"));
+                dFactura.setPrecioUnitario(rs.getBigDecimal("PrecioUnitario"));
+                dFactura.setSubTotal(rs.getBigDecimal("SubTotal"));
+                //dFactura.setTotalImpuesto(rs.getBigDecimal("TotalImpuesto"));
+                dFactura.setUnidadMedida(rs.getString("UnidadMedida"));
+
+                if (consecutivo != rs.getInt("Secuencia")) {
+                    
+                    if (!primerRegistro) {
+                        lineas = SearchLinesToPrint(notaCredito.getSecuencia(), conn);
+                        notaCredito.setInvoiceLinesToPrint(lineas);
+                        lista.add(notaCredito);                      
+                    }else{
+                        primerRegistro = false;
+                    }
+
+                    consecutivo = rs.getInt("Secuencia");
+                    notaCredito = new NotasCredito();
+                    notaCredito.setSecuencia(consecutivo);
+                    notaCredito.setNombreCliente(rs.getString("NombreCliente"));
+                    notaCredito.setCorreoElectronicoCliente(rs.getString("CorreoElectronicoCliente"));
+                    notaCredito.setCodigMedioPago1(rs.getString("CodMedioPago1"));
+                    notaCredito.setCodigMedioPago2(rs.getString("CodMedioPago2"));
+                    notaCredito.setCodigMedioPago3(rs.getString("CodMedioPago3"));
+                    notaCredito.setCodigMedioPago4(rs.getString("CodMedioPago4"));
+                    notaCredito.setCondicionVenta(rs.getString("CodCondicionVenta"));
+                    notaCredito.setIdOrden(rs.getString("IdOrden"));
+                    notaCredito.setTotalComprante(rs.getBigDecimal("TotalComprobante"));
+                    notaCredito.setTotalImpuesto(rs.getBigDecimal("TotalImpuesto"));
+                    notaCredito.setTotalVenta(rs.getBigDecimal("TotalVenta"));
+                    notaCredito.setTotalDescuentos(rs.getBigDecimal("TotalDescuento"));
+                    notaCredito.setTotalVentaNeta(rs.getBigDecimal("TotalVentaNeta"));
+                    notaCredito.setReintentos(rs.getInt("Reintentos"));
+                    notaCredito.setIndexHaciendaInformation(rs.getInt("IndexHaciedaInformation"));
+                    notaCredito.setReferenciaFactura(rs.getString("NumeroConsecutivo"));
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+                    try {
+                        notaCredito.setFechaReferencia(formatter.parse(rs.getString("FechaAutorizacion")));
+                    } catch (ParseException ex) {
+                        Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    notaCredito.setDetalleFactura(dFactura);
+                } else {
+                    notaCredito.setDetalleFactura(dFactura);
+                }
+                
+                dImpuestos = SearchTaxDetails(consecutivo, dFactura.getLinea(), conn);
+                dFactura.setdImpuesto(dImpuestos);
+            }
+            if(notaCredito != null){
+                lineas = SearchLinesToPrint(notaCredito.getSecuencia(), conn);
+                notaCredito.setInvoiceLinesToPrint(lineas);                
+                lista.add(notaCredito);
+            }                      
+        } catch (SQLException ex) {
+            Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (conn != null && !conn.isClosed()) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(ControladorDB.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        return lista;
+    }    
 }

@@ -16,6 +16,8 @@ import WSCreditoElectronico.ClsInformacionReferencia;
 import com.google.gson.Gson;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.logging.Level;
@@ -23,8 +25,12 @@ import java.util.logging.Logger;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.ws.Binding;
+import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Holder;
+import javax.xml.ws.handler.Handler;
 import servidor1.ControladorDB;
+import servidor1.LogMessageHandler;
 
 /**
  *
@@ -47,7 +53,7 @@ public class ControladorNotaCredito implements Runnable{
             t = new Thread (this);
             t.start ();
         }
-    }    
+    }
 
     @Override
     public void run() {
@@ -86,8 +92,8 @@ public class ControladorNotaCredito implements Runnable{
             WSCreditoElectronico.ClsNotaCredito documento =  ConvertirANotaCreditoGuru(notaCredito);            
             
             try {
-                System.out.println("Enviando tiquete a hacienda con el Orden#: " + notaCredito.getIdOrden());
-                Thread.sleep(5000);
+                System.out.println("Enviando nota de credito a hacienda anulando comprobante#: " + notaCredito.getReferenciaFactura());
+                Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 Logger.getLogger(ControladorFacturaElectronica.class.getName()).log(Level.SEVERE, null, ex);
             }         
@@ -108,20 +114,23 @@ public class ControladorNotaCredito implements Runnable{
                     System.out.println("Respuesta recibida de hacienda.");
                     System.out.println("Tiquete electronico numero: " + enviarFacturaResult.value.getNumeroConsecutivo());
                     System.out.println("Clave electronica numero: " + enviarFacturaResult.value.getClaveComprobante());                    
-                    Thread.sleep(5000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException ex) {
                     Logger.getLogger(ControladorFacturaElectronica.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
+                String strDate = dateFormat.format(enviarFacturaResult.value.getFechaAutorizacion().toGregorianCalendar().getTime());
                 //Se actualizan los datos en la tabla de facturas:
-                cDB.AgregarResultado(
+                cDB.AgregarResultadoNotaCredito(
                         notaCredito.getSecuencia(),
                         estadoFactura, 
-                        enviarFacturaResult.value.getFechaAutorizacion().toString(),
+                        strDate,
                         enviarFacturaResult.value.getNumeroConsecutivo(), 
                         enviarFacturaResult.value.getClaveComprobante()
                 );
                 
-                notaCredito.addHaciendaInfo(enviarFacturaResult.value.getClaveComprobante(), enviarFacturaResult.value.getNumeroConsecutivo());
+                //notaCredito.addHaciendaInfo(enviarFacturaResult.value.getClaveComprobante(), enviarFacturaResult.value.getNumeroConsecutivo());
                 
                 //Enviar a imprimir la factura:
                 //cImpresion.printInvoice(factura);
@@ -141,6 +150,13 @@ public class ControladorNotaCredito implements Runnable{
     private static void enviarNotaCredito(java.lang.String clave, java.lang.String entorno, WSCreditoElectronico.ClsNotaCredito notaCredito, javax.xml.ws.Holder<java.lang.String> mensaje, javax.xml.ws.Holder<WSCreditoElectronico.RespuestaEDOC> enviarNotaCreditoResult) {
         WSCreditoElectronico.WSEDOCNOTASCREDITO service = new WSCreditoElectronico.WSEDOCNOTASCREDITO();
         WSCreditoElectronico.IWSEDOCNOTASCREDITO port = service.getBasicHttpBindingIWSEDOCNOTASCREDITO();
+        
+        BindingProvider bindingProvider = (BindingProvider) port;
+        Binding binding = bindingProvider.getBinding();
+        List<Handler> handlerChain = binding.getHandlerChain();
+        handlerChain.add(new LogMessageHandler());
+        binding.setHandlerChain(handlerChain);        
+        
         port.enviarNotaCredito(clave, entorno, notaCredito, mensaje, enviarNotaCreditoResult);
     }   
     

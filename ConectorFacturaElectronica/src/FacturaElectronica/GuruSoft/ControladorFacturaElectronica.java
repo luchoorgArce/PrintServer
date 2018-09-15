@@ -55,7 +55,7 @@ public class ControladorFacturaElectronica implements Runnable {
         {
             try {
                 EnviarFacturas();
-                Thread.sleep(4000);
+                Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 Logger.getLogger(ControladorFacturaElectronica.class.getName()).log(Level.SEVERE, null, ex);
             }
